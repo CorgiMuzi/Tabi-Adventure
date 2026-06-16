@@ -1,0 +1,42 @@
+# ============================================================================
+#  Unreal Engine — generated / build artifacts (never committed)
+# ============================================================================
+
+# Compiled binaries and intermediates
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+
+# Build records
+Build/
+
+# Plugin build artifacts (plugin source is kept; only its generated output is ignored)
+Plugins/**/Binaries/
+Plugins/**/Intermediate/
+
+# IDE / project files (regenerated from .uproject)
+.vs/
+.vscode/
+.idea/
+*.sln
+*.suo
+*.opensdf
+*.sdf
+*.VC.db
+*.VC.opendb
+*.xcodeproj
+*.xcworkspace
+
+# Rider
+*.DotSettings.user
+Plugins/Developer/RiderLink/
+
+# OS cruft
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Crash / log artifacts
+*.log
+*.pdb
