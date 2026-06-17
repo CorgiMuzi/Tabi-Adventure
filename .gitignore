@@ -40,3 +40,9 @@ desktop.ini
 # Crash / log artifacts
 *.log
 *.pdb
+
+# Assets
+Assets/
+
+# Game design related
+Docs/
