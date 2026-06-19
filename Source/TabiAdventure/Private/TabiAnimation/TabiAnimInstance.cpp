@@ -5,7 +5,7 @@
 
 #include "GameFramework/CharacterMovementComponent.h"
 #include "TabiCharacter/TabiCharacterBase.h"
-
+#include "TabiData/TabiAttackDefinition.h"
 
 UTabiAnimInstance::UTabiAnimInstance()
 {
@@ -35,4 +35,27 @@ void UTabiAnimInstance::Tick(float DeltaTime)
 	{
 		bIsFalling = CharacterMovement->IsFalling();
 	}
+}
+
+bool UTabiAnimInstance::PlayAttackAnimation(UTabiAttackDefinition* AttackDef)
+{
+	if (!AttackDef || !AttackDef->AnimSequence) return false;
+	return PlayAnimationOverride(AttackDef->AnimSequence, TEXT("DefaultSlot"), 1.f, 0.f, FZDOnAnimationOverrideEndSignature::CreateUObject(this, &ThisClass::HandleAttackEnd));
+}
+
+void UTabiAnimInstance::PlayNotify_EnableHitCollision()
+{
+	OnEnableHitCollision.Execute();
+}
+
+void UTabiAnimInstance::PlayNotify_DisableHitCollision()
+{
+	OnDisableHitCollision.Execute();
+}
+
+void UTabiAnimInstance::HandleAttackEnd(bool bIsCompleted)
+{
+	if (!bIsCompleted) return;
+
+	OnAttackAnimEnd.Execute();
 }

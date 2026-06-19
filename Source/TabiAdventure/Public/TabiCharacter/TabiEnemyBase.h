@@ -13,4 +13,7 @@ UCLASS()
 class TABIADVENTURE_API ATabiEnemyBase : public ATabiCharacterBase
 {
 	GENERATED_BODY()
+
+public:
+	ATabiEnemyBase();
 };

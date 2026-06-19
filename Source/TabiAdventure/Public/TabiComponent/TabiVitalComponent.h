@@ -13,7 +13,7 @@ enum class ETabiVitalType : uint8
 	MP UMETA(DisplayName="MP"),
 	Stamina UMETA(DisplayName="Stamina"),
 
-	Max UMETA(DisplayName="Max")
+	MAX UMETA(DisplayName="MAX")
 };
 
 USTRUCT(BlueprintType)
@@ -46,9 +46,13 @@ public:
 	UTabiVitalComponent();
 	virtual void BeginPlay() override;
 
+	void ReceiveDamage(float Damage);
+	void ReceiveHeal(float Heal);
+
 protected:
 	TMap<ETabiVitalType, FTabiVital> Vitals;
 
 private:
 	void InitVitals();
+	void FillVitalValues();
 };

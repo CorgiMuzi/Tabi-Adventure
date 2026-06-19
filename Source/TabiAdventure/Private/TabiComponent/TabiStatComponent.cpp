@@ -3,6 +3,9 @@
 
 #include "TabiComponent/TabiStatComponent.h"
 
+#include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
+
 UTabiStatComponent::UTabiStatComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
@@ -12,11 +15,21 @@ void UTabiStatComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if (ACharacter* OwnerCharacter = Cast<ACharacter>(GetOwner()))
+	{
+		CharacterMovement = OwnerCharacter->GetCharacterMovement();
+	}
+}
+
+void UTabiStatComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+{
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
 }
 
 void UTabiStatComponent::InitStat()
 {
-	for (uint8 i = 0; i < static_cast<uint8>(ETabiStatType::Max); ++i)
+	for (uint8 i = 0; i < static_cast<uint8>(ETabiStatType::MAX); ++i)
 	{
 		const ETabiStatType Type = static_cast<ETabiStatType>(i);
 

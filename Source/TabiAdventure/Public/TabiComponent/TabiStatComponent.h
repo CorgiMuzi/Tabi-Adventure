@@ -6,6 +6,8 @@
 #include "Components/ActorComponent.h"
 #include "TabiStatComponent.generated.h"
 
+class UCharacterMovementComponent;
+
 UENUM(BlueprintType)
 enum class ETabiStatType : uint8
 {
@@ -15,7 +17,7 @@ enum class ETabiStatType : uint8
 	Intelligence UMETA(DisplayName="Intelligence"),
 	Speed UMETA(DisplayName="Speed"),
 
-	Max UMETA(DisplayName="Max")
+	MAX UMETA(DisplayName="MAX")
 };
 
 USTRUCT(BlueprintType)
@@ -44,6 +46,7 @@ public:
 	UTabiStatComponent();
 
 	virtual void BeginPlay() override;
+	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	//~ Stat Delegates
 	FOnStatChanged OnStatCurrentValueChanged;
@@ -54,8 +57,12 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category="Tabi|Stat")
 	TMap<ETabiStatType, FTabiStat> Stats;
 
+	UPROPERTY()
+	TObjectPtr<UCharacterMovementComponent> CharacterMovement;
+
 private:
 	void InitStat();
+
 
 public:
 	void SetStatCurrentValue(ETabiStatType StatType, float NewValue);

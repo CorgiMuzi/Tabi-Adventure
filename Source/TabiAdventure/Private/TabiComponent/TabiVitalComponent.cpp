@@ -6,31 +6,48 @@
 UTabiVitalComponent::UTabiVitalComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
+
+	InitVitals();
 }
 
 void UTabiVitalComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	InitVitals();
+	FillVitalValues();
+}
 
-	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Green, FString::Printf(TEXT("HP: %f / %f"), Vitals[ETabiVitalType::HP].CurrentValue, Vitals[ETabiVitalType::HP].CurrentMax));
+void UTabiVitalComponent::ReceiveDamage(float Damage)
+{
+	if (!Vitals.Contains(ETabiVitalType::HP)) return;
+	Vitals[ETabiVitalType::HP].CurrentValue -= Damage;
+}
+
+void UTabiVitalComponent::ReceiveHeal(float Heal)
+{
+	if (!Vitals.Contains(ETabiVitalType::HP)) return;
+	Vitals[ETabiVitalType::HP].CurrentValue += Heal;
 }
 
 void UTabiVitalComponent::InitVitals()
 {
-	for (uint8 i = 0; i < static_cast<uint8>(ETabiVitalType::Max); ++i)
+	for (uint8 i = 0; i < static_cast<uint8>(ETabiVitalType::MAX); ++i)
 	{
 		const ETabiVitalType Type = static_cast<ETabiVitalType>(i);
 
 		if (!Vitals.Contains(Type))
 		{
 			Vitals.Emplace(Type, FTabiVital(0.f, 0.f));
-			continue;
 		}
+	}
+}
 
-		Vitals[Type].CurrentMax = Vitals[Type].BaseMax;
-		Vitals[Type].CurrentValue = Vitals[Type].BaseValue;
+void UTabiVitalComponent::FillVitalValues()
+{
+	for (auto& Vital : Vitals)
+	{
+		Vital.Value.CurrentMax = Vital.Value.BaseMax;
+		Vital.Value.CurrentValue = Vital.Value.BaseValue;
 	}
 }
 
