@@ -63,7 +63,6 @@ protected:
 private:
 	void InitStat();
 
-
 public:
 	void SetStatCurrentValue(ETabiStatType StatType, float NewValue);
 	void SetStatBaseValue(ETabiStatType StatType, float NewValue);

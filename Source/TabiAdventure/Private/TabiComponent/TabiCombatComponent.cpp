@@ -65,5 +65,5 @@ void UTabiCombatComponent::OnHitCollisionOverlap(UPrimitiveComponent* Overlapped
 void UTabiCombatComponent::Attack(ATabiCharacterBase* Target)
 {
 	// TODO: Referenc Attack Definition later.
-	Target->ReceiveDamage(30.f);
+	Target->ReceiveDamage(30.f, GetOwner());
 }

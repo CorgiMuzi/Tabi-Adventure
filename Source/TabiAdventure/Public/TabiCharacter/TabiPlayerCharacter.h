@@ -38,11 +38,6 @@ protected:
 	TObjectPtr<UCameraComponent> Camera;
 	//~ End Camera
 
-	//~ Anim Instance
-	UPROPERTY()
-	TObjectPtr<UTabiAnimInstance> PlayerAnimInstance;
-	//~ End Anim Instance
-
 	//~ Player Input
 	void Move(const FInputActionValue& Value);
 	virtual void Jump() override;
@@ -84,11 +79,12 @@ protected:
 	//~ Attack
 	UPROPERTY(EditAnywhere, Category= "Tabi|Combat")
 	TArray<TObjectPtr<UTabiAttackDefinition>> AttackDefinitions;
+
+	virtual void HandleAttackAnimEnd() override;
 	//~ End Attack
 
 private:
-	UFUNCTION()
-	void HandleAttackEnd();
+
 
 	//~ Attack
 	int32 AttackComboStack = 0;

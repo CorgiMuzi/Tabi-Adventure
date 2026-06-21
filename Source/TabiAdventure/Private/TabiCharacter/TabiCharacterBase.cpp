@@ -11,6 +11,8 @@
 #include "TabiComponent/TabiStatComponent.h"
 #include "TabiComponent/TabiCombatComponent.h"
 
+#include "TabiAnimation/TabiAnimInstance.h"
+
 #include "TabiGameFramework/TabiCollisionChannel.h"
 
 #include "PaperFlipbookComponent.h"
@@ -24,6 +26,11 @@ ATabiCharacterBase::ATabiCharacterBase()
 	UCharacterMovementComponent* MovementComp = GetCharacterMovement();
 	MovementComp->bConstrainToPlane = true;
 	MovementComp->bSnapToPlaneAtStart = true;
+	MovementComp->bOrientRotationToMovement = false;
+
+	bUseControllerRotationYaw = false;
+	bUseControllerRotationPitch = false;
+	bUseControllerRotationRoll = false;
 
 	Hitbox = CreateDefaultSubobject<UBoxComponent>(TEXT("Hitbox"));
 	Hitbox->SetCollisionResponseToAllChannels(ECR_Ignore);
@@ -32,27 +39,74 @@ ATabiCharacterBase::ATabiCharacterBase()
 
 	Hurtbox = CreateDefaultSubobject<UBoxComponent>(TEXT("Hurtbox"));
 	Hurtbox->SetCollisionObjectType(TABI_TRACE_HURTBOX);
-	Hurtbox->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+	Hurtbox->SetCollisionResponseToAllChannels(ECR_Ignore);
 	Hurtbox->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Overlap);
 	Hurtbox->SetupAttachment(GetCapsuleComponent());
 
 	VitalComponent = CreateDefaultSubobject<UTabiVitalComponent>(TEXT("VitalComponent"));
+	VitalComponent->OnTabiCharacterDead.BindDynamic(this, &ThisClass::OnCharacterDead);
 	StatComponent = CreateDefaultSubobject<UTabiStatComponent>(TEXT("StatComponent"));
 	CombatComponent = CreateDefaultSubobject<UTabiCombatComponent>(TEXT("CombatComponent"));
-
 }
 
 void ATabiCharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
+
+	HitboxBaseOffset = FVector(Hitbox->GetRelativeLocation().X, 0.f, 0.f);
+
+	TabiAnimInstance = CastChecked<UTabiAnimInstance>(GetAnimInstance());
+	TabiAnimInstance->OnAttackAnimEnd.BindDynamic(this, &ThisClass::HandleAttackAnimEnd);
+	TabiAnimInstance->OnDeathAnimEnd.BindDynamic(this, &ThisClass::HandleDeathAnimEnd);
+
+	Flipbook = GetSprite();
 }
 
-void ATabiCharacterBase::ReceiveDamage(float Damage)
+void ATabiCharacterBase::ReceiveDamage(float Damage, const AActor* DamageCauser)
 {
-	if (VitalComponent)
+	if (VitalComponent && VitalComponent->ReceiveDamage(Damage))
 	{
-		VitalComponent->ReceiveDamage(Damage);
+		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, FString::Printf(TEXT("%s HP: %f"), *GetName(), VitalComponent->GetCurrentValueByType(ETabiVitalType::HP)));
+
+		if (Flipbook)
+		{
+			DefaultColor = Flipbook->GetSpriteColor();
+			Flipbook->SetSpriteColor(FLinearColor(1.f, 0.3f, 0.3f));
+		}
+
+		GetWorld()->GetTimerManager().SetTimer(HurtEffectTimerHandle, FTimerDelegate::CreateLambda(
+			[this](){
+				if (Flipbook) Flipbook->SetSpriteColor(DefaultColor);
+			}), .1f, false);
+
+		if (!DamageCauser) return;
+
+		FVector KnockbackDir = GetActorLocation() - DamageCauser->GetActorLocation();
+		KnockbackDir.Z = 0.f;
+
+		KnockbackDir = KnockbackDir.GetSafeNormal();
+
+		FVector KnockbackVelocity = KnockbackDir * KnockbackStrength;
+		KnockbackVelocity.Z = KnockbackLiftSpeed;
+
+		LaunchCharacter(KnockbackVelocity, true, true);
 	}
+}
+
+void ATabiCharacterBase::HandleAttackAnimEnd()
+{
+}
+
+void ATabiCharacterBase::HandleDeathAnimEnd()
+{
+	Destroy();
+}
+
+void ATabiCharacterBase::OnCharacterDead()
+{
+	if (!TabiAnimInstance) return;
+	Hurtbox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	TabiAnimInstance->PlayDeadAnimation();
 }
 
 void ATabiCharacterBase::SetFacingRight(bool bNewFacingRight)

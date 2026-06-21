@@ -9,8 +9,9 @@
 
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-#include "TabiAnimation/TabiAnimInstance.h"
 #include "TabiComponent/TabiStatComponent.h"
+
+#include "TabiAnimation/TabiAnimInstance.h"
 
 ATabiPlayerCharacter::ATabiPlayerCharacter()
 {
@@ -45,9 +46,6 @@ void ATabiPlayerCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	StatComponent->OnStatCurrentValueChanged.AddDynamic(this, &ThisClass::HandleSpeedChanged);
-
-	PlayerAnimInstance = CastChecked<UTabiAnimInstance>(GetAnimInstance());
-	PlayerAnimInstance->OnAttackAnimEnd.BindDynamic(this, &ThisClass::HandleAttackEnd);
 }
 
 void ATabiPlayerCharacter::PossessedBy(AController* NewController)
@@ -94,6 +92,12 @@ void ATabiPlayerCharacter::Tick(float DeltaSeconds)
 			MoveComp->GravityScale = ApexGravityScale;
 		}
 	}
+
+	if (TabiAnimInstance)
+	{
+		TabiAnimInstance->SetSpeed(FMath::Abs(GetVelocity().X));
+		TabiAnimInstance->SetIsFalling(GetCharacterMovement()->IsFalling());
+	}
 }
 
 void ATabiPlayerCharacter::Move(const FInputActionValue& Value)
@@ -115,9 +119,9 @@ void ATabiPlayerCharacter::Move(const FInputActionValue& Value)
 void ATabiPlayerCharacter::Jump()
 {
 	CharacterState = ETabiCharacterState::Jumping;
-	if (PlayerAnimInstance)
+	if (TabiAnimInstance)
 	{
-		PlayerAnimInstance->StopAllAnimationOverrides();
+		TabiAnimInstance->StopAllAnimationOverrides();
 	}
 	Super::Jump();
 }
@@ -134,7 +138,7 @@ void ATabiPlayerCharacter::Attack()
 	if (CharacterState == ETabiCharacterState::Attacking ||
 		CharacterState == ETabiCharacterState::Jumping) return;
 
-	if (!PlayerAnimInstance) return;
+	if (!TabiAnimInstance) return;
 
 	CharacterState = ETabiCharacterState::Attacking;
 
@@ -144,7 +148,7 @@ void ATabiPlayerCharacter::Attack()
 	 * if (AttackComboStack >= AttackDefinitions.Num()) return; AttackComboStack = 0;
 	*/
 	UTabiAttackDefinition* AttackDef = AttackDefinitions[FMath::RandRange(0, AttackDefinitions.Num()-1)];
-	PlayerAnimInstance->PlayAttackAnimation(AttackDef);
+	TabiAnimInstance->PlayAttackAnimation(AttackDef);
 }
 
 void ATabiPlayerCharacter::HandleSpeedChanged(ETabiStatType StatType, float NewSpeed, float OldSpeed)
@@ -154,7 +158,7 @@ void ATabiPlayerCharacter::HandleSpeedChanged(ETabiStatType StatType, float NewS
 	GetCharacterMovement()->MaxWalkSpeed = NewSpeed;
 }
 
-void ATabiPlayerCharacter::HandleAttackEnd()
+void ATabiPlayerCharacter::HandleAttackAnimEnd()
 {
 	if (CharacterState != ETabiCharacterState::Attacking) return;
 

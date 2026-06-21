@@ -12,6 +12,7 @@ class UCharacterMovementComponent;
 class UTabiAttackDefinition;
 
 DECLARE_DYNAMIC_DELEGATE(FOnAttackAnimEndSignature);
+DECLARE_DYNAMIC_DELEGATE(FOnDeadAnimEndSignature);
 DECLARE_DYNAMIC_DELEGATE(FEnableHitCollision);
 DECLARE_DYNAMIC_DELEGATE(FDisableHitCollision);
 
@@ -30,6 +31,7 @@ public:
 	/// @param AttackDef
 	/// @return Returns whether the animation has correctly been queued.
 	bool PlayAttackAnimation(UTabiAttackDefinition* AttackDef);
+	bool PlayDeadAnimation();
 
 	UFUNCTION(BlueprintCallable, Category="Tabi|Combat")
 	void PlayNotify_EnableHitCollision();
@@ -37,18 +39,16 @@ public:
 	void PlayNotify_DisableHitCollision();
 
 	FOnAttackAnimEndSignature OnAttackAnimEnd;
+	FOnDeadAnimEndSignature OnDeathAnimEnd;
 	FEnableHitCollision OnEnableHitCollision;
 	FDisableHitCollision OnDisableHitCollision;
 
 protected:
 	UPROPERTY()
-	TObjectPtr<ATabiCharacterBase> OwningCharacter;
-
-	UPROPERTY()
-	TObjectPtr<UCharacterMovementComponent> CharacterMovement;
-
-	UPROPERTY()
 	TObjectPtr<UPaperZDAnimationSource> AnimationSource;
+
+	UPROPERTY(EditDefaultsOnly, Category="Tabi|GroundLocomotion")
+	TObjectPtr<UPaperZDAnimSequence> DeadAnimSequence;
 
 	UPROPERTY(BlueprintReadOnly, Category="Tabi|GroundLocomotion")
 	float Speed;
@@ -57,5 +57,10 @@ protected:
 	bool bIsFalling;
 
 private:
-	void HandleAttackEnd(bool bIsCompleted);
+	void HandleAttackAnimEnd(bool bIsCompleted);
+	void HandleDeadAnimEnd(bool bIsCompleted);
+
+public:
+	inline void SetSpeed(const float NewSpeed) { Speed = NewSpeed; }
+	inline void SetIsFalling(const bool IsFalling) { bIsFalling = IsFalling; }
 };

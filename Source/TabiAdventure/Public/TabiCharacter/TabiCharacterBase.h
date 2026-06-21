@@ -7,6 +7,7 @@
 
 #include "TabiCharacterBase.generated.h"
 
+class UTabiAnimInstance;
 class UTabiCombatComponent;
 class UTabiStatComponent;
 class UTabiVitalComponent;
@@ -17,7 +18,7 @@ UENUM(BlueprintType)
 enum class ETabiCharacterState : uint8
 {
 	Idling UMETA(DisplayName = "Idling"),
-	Jumping UMETA(DisplayName = "Jumping"),
+	Jumping UMETA(DisplaWyName = "Jumping"),
 	Attacking UMETA(DisplayName = "Attacking"),
 	Stunned UMETA(DisplayName = "Stunned"),
 	Dead UMETA(DisplayName = "Dead"),
@@ -35,16 +36,25 @@ public:
 
 	virtual void BeginPlay() override;
 
-	void ReceiveDamage(float Damage);
+	void ReceiveDamage(float Damage, const AActor* DamageCauser = nullptr);
 
 protected:
-	UPROPERTY()
+	UFUNCTION()
+	virtual void HandleAttackAnimEnd();
+
+	UFUNCTION()
+	virtual void HandleDeathAnimEnd();
+
+	UFUNCTION()
+	void OnCharacterDead();
+
+	UPROPERTY(VisibleAnywhere, Category="Tabi|Vital")
 	TObjectPtr<UTabiVitalComponent> VitalComponent;
 
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, Category="Tabi|Stat")
 	TObjectPtr<UTabiStatComponent> StatComponent;
 
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, Category="Tabi|Combat")
 	TObjectPtr<UTabiCombatComponent> CombatComponent;
 
 	//~ Character State
@@ -55,14 +65,32 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category="Tabi|Combat")
 	TObjectPtr<UBoxComponent> Hitbox;
 
-	UPROPERTY(EditAnywhere, Category="Tabi|Combat")
+	UPROPERTY(VisibleAnywhere, Category="Tabi|Combat")
 	FVector HitboxBaseOffset;
 
 	UPROPERTY(VisibleAnywhere, Category="Tabi|Combat")
 	TObjectPtr<UBoxComponent> Hurtbox;
+
+	UPROPERTY()
+	FTimerHandle HurtEffectTimerHandle;
+
+	UPROPERTY(EditAnywhere, Category="Tabi|Combat")
+	float KnockbackStrength;
+
+	UPROPERTY(EditAnywhere, Category="Tabi|Combat")
+	float KnockbackLiftSpeed;
 	//~ End Combat
 
+	//~ Animation
+	UPROPERTY(VisibleAnywhere, Category="Tabi|Animation")
+	TObjectPtr<UTabiAnimInstance> TabiAnimInstance;
 
+	UPROPERTY()
+	UPaperFlipbookComponent* Flipbook;
+
+	UPROPERTY()
+	FLinearColor DefaultColor;
+	//~ End Animation
 private:
 	void OnFacingChanged();
 
@@ -75,3 +103,4 @@ public:
 
 	UBoxComponent* GetHitbox() const { return Hitbox; }
 };
+

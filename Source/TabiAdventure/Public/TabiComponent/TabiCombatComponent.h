@@ -6,6 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "TabiCombatComponent.generated.h"
 
+class UPaperFlipbookComponent;
 class ATabiCharacterBase;
 class UBoxComponent;
 

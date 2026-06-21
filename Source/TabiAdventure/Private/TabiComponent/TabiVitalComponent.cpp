@@ -17,16 +17,29 @@ void UTabiVitalComponent::BeginPlay()
 	FillVitalValues();
 }
 
-void UTabiVitalComponent::ReceiveDamage(float Damage)
+bool UTabiVitalComponent::ReceiveDamage(float Damage)
 {
-	if (!Vitals.Contains(ETabiVitalType::HP)) return;
-	Vitals[ETabiVitalType::HP].CurrentValue -= Damage;
+	if (!Vitals.Contains(ETabiVitalType::HP)) return false;
+
+	if (IsInVulnerable()) return false;
+	const float NewHP = Vitals[ETabiVitalType::HP].CurrentValue - Damage;
+	Vitals[ETabiVitalType::HP].CurrentValue = FMath::Clamp(NewHP,0.f, Vitals[ETabiVitalType::HP].CurrentMax);
+	if (FMath::IsNearlyZero(Vitals[ETabiVitalType::HP].CurrentValue)) OnCharacterDead();
+	return true;
 }
 
-void UTabiVitalComponent::ReceiveHeal(float Heal)
+bool UTabiVitalComponent::ReceiveHeal(float Heal)
 {
-	if (!Vitals.Contains(ETabiVitalType::HP)) return;
-	Vitals[ETabiVitalType::HP].CurrentValue += Heal;
+	if (!Vitals.Contains(ETabiVitalType::HP)) return false;
+	const float NewHP = Vitals[ETabiVitalType::HP].CurrentValue + Heal;
+	Vitals[ETabiVitalType::HP].CurrentValue = FMath::Clamp(NewHP, 0.f, Vitals[ETabiVitalType::HP].CurrentMax);
+
+	return true;
+}
+
+void UTabiVitalComponent::OnCharacterDead()
+{
+	OnTabiCharacterDead.Execute();
 }
 
 void UTabiVitalComponent::InitVitals()
@@ -51,3 +64,8 @@ void UTabiVitalComponent::FillVitalValues()
 	}
 }
 
+bool UTabiVitalComponent::IsInVulnerable() const
+{
+	//TODO: Estimate invulnerable conditions
+	return false;
+}
