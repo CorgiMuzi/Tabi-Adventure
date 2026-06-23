@@ -26,6 +26,9 @@ enum class ETabiCharacterState : uint8
 	MAX UMETA(DisplayName = "MAX")
 };
 
+DECLARE_DYNAMIC_DELEGATE(FOnTabiVitalSetSignature);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnTabiCharacterDeadSignature);
+
 UCLASS()
 class TABIADVENTURE_API ATabiCharacterBase : public APaperZDCharacter
 {
@@ -34,9 +37,17 @@ class TABIADVENTURE_API ATabiCharacterBase : public APaperZDCharacter
 public:
 	ATabiCharacterBase();
 
+	virtual void PostInitializeComponents() override;
 	virtual void BeginPlay() override;
 
+	void MoveAlongX(float ScaleX);
+
 	void ReceiveDamage(float Damage, const AActor* DamageCauser = nullptr);
+
+	//~ Delegates
+	FOnTabiVitalSetSignature OnVitalSet;
+	FOnTabiCharacterDeadSignature OnTabiCharacterDead;
+	//~ End Delegates
 
 protected:
 	UFUNCTION()
@@ -46,7 +57,7 @@ protected:
 	virtual void HandleDeathAnimEnd();
 
 	UFUNCTION()
-	void OnCharacterDead();
+	virtual void OnCharacterDead();
 
 	UPROPERTY(VisibleAnywhere, Category="Tabi|Vital")
 	TObjectPtr<UTabiVitalComponent> VitalComponent;
@@ -58,6 +69,9 @@ protected:
 	TObjectPtr<UTabiCombatComponent> CombatComponent;
 
 	//~ Character State
+	UFUNCTION()
+	void HandleSpeedChanged(ETabiStatType StatType, float NewSpeed, float OldSpeed);
+
 	ETabiCharacterState CharacterState{ETabiCharacterState::Idling};
 	//~ End Character State
 
@@ -100,6 +114,8 @@ public:
 	void SetFacingRight(bool bNewFacingRight);
 	FORCEINLINE bool IsFacingRight() const { return bIsFacingRight; }
 	FORCEINLINE ETabiCharacterState GetCharacterState() const { return CharacterState; }
+	bool IsCharacterMovable() const;
+	inline bool IsAlive() const;
 
 	UBoxComponent* GetHitbox() const { return Hitbox; }
 };

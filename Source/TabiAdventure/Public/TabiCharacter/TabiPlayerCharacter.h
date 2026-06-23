@@ -44,9 +44,6 @@ protected:
 	virtual void Landed(const FHitResult& Hit) override;
 	void Attack();
 
-	UFUNCTION()
-	void HandleSpeedChanged(ETabiStatType StatType, float NewSpeed, float OldSpeed);
-
 	UPROPERTY(EditDefaultsOnly, Category= "Tabi|Input")
 	TObjectPtr<UInputMappingContext> LocomotionContext;
 
@@ -91,5 +88,4 @@ private:
 	//~ End Attack
 
 public:
-	bool IsCharacterMovable() const;
 };

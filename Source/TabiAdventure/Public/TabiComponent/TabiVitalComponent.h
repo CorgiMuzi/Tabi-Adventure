@@ -37,7 +37,7 @@ struct FTabiVital
 	FTabiVital(float InitValue, float InitMax) : BaseValue{InitValue} , BaseMax{InitMax}, CurrentValue{InitValue}, CurrentMax{InitMax} {}
 };
 
-DECLARE_DYNAMIC_DELEGATE(FOnTabiCharacterDeadSignature);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnTabiVitalDepletedSignature);
 
 UCLASS(ClassGroup=(Tabi), meta=(BlueprintSpawnableComponent))
 class TABIADVENTURE_API UTabiVitalComponent : public UActorComponent
@@ -46,12 +46,14 @@ class TABIADVENTURE_API UTabiVitalComponent : public UActorComponent
 
 public:
 	UTabiVitalComponent();
+
 	virtual void BeginPlay() override;
+	void FillVitalValues();
 
 	bool ReceiveDamage(float Damage);
 	bool ReceiveHeal(float Heal);
 
-	FOnTabiCharacterDeadSignature OnTabiCharacterDead;
+	FOnTabiVitalDepletedSignature OnTabiHPDepleted;
 
 
 protected:
@@ -62,10 +64,10 @@ protected:
 
 private:
 	void InitVitals();
-	void FillVitalValues();
 
 public:
 	bool IsInVulnerable() const;
+	bool IsAlive() const;
 
 	float GetCurrentValueByType(ETabiVitalType VitalType) const { return Vitals[VitalType].CurrentValue; }
 	float GetCurrentMaxByType(ETabiVitalType VitalType) const { return Vitals[VitalType].CurrentMax; }

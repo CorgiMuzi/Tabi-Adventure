@@ -44,9 +44,16 @@ ATabiCharacterBase::ATabiCharacterBase()
 	Hurtbox->SetupAttachment(GetCapsuleComponent());
 
 	VitalComponent = CreateDefaultSubobject<UTabiVitalComponent>(TEXT("VitalComponent"));
-	VitalComponent->OnTabiCharacterDead.BindDynamic(this, &ThisClass::OnCharacterDead);
+	VitalComponent->OnTabiHPDepleted.AddDynamic(this, &ThisClass::OnCharacterDead);
 	StatComponent = CreateDefaultSubobject<UTabiStatComponent>(TEXT("StatComponent"));
 	CombatComponent = CreateDefaultSubobject<UTabiCombatComponent>(TEXT("CombatComponent"));
+}
+
+void ATabiCharacterBase::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
+	if (VitalComponent) VitalComponent->FillVitalValues();
 }
 
 void ATabiCharacterBase::BeginPlay()
@@ -59,38 +66,57 @@ void ATabiCharacterBase::BeginPlay()
 	TabiAnimInstance->OnAttackAnimEnd.BindDynamic(this, &ThisClass::HandleAttackAnimEnd);
 	TabiAnimInstance->OnDeathAnimEnd.BindDynamic(this, &ThisClass::HandleDeathAnimEnd);
 
+	StatComponent->OnStatCurrentValueChanged.AddDynamic(this, &ThisClass::HandleSpeedChanged);
+
 	Flipbook = GetSprite();
 }
 
 void ATabiCharacterBase::ReceiveDamage(float Damage, const AActor* DamageCauser)
 {
-	if (VitalComponent && VitalComponent->ReceiveDamage(Damage))
+	// Return when failed to dealing damage.
+	if (!VitalComponent || !VitalComponent->ReceiveDamage(Damage)) return;
+	// Don't play hit reaction animations when character is dead.
+	if (!VitalComponent->IsAlive()) return;
+
+	if (Flipbook)
 	{
-		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, FString::Printf(TEXT("%s HP: %f"), *GetName(), VitalComponent->GetCurrentValueByType(ETabiVitalType::HP)));
-
-		if (Flipbook)
-		{
-			DefaultColor = Flipbook->GetSpriteColor();
-			Flipbook->SetSpriteColor(FLinearColor(1.f, 0.3f, 0.3f));
-		}
-
-		GetWorld()->GetTimerManager().SetTimer(HurtEffectTimerHandle, FTimerDelegate::CreateLambda(
-			[this](){
-				if (Flipbook) Flipbook->SetSpriteColor(DefaultColor);
-			}), .1f, false);
-
-		if (!DamageCauser) return;
-
-		FVector KnockbackDir = GetActorLocation() - DamageCauser->GetActorLocation();
-		KnockbackDir.Z = 0.f;
-
-		KnockbackDir = KnockbackDir.GetSafeNormal();
-
-		FVector KnockbackVelocity = KnockbackDir * KnockbackStrength;
-		KnockbackVelocity.Z = KnockbackLiftSpeed;
-
-		LaunchCharacter(KnockbackVelocity, true, true);
+		DefaultColor = Flipbook->GetSpriteColor();
+		Flipbook->SetSpriteColor(FLinearColor(1.f, 0.3f, 0.3f));
 	}
+
+	GetWorld()->GetTimerManager().SetTimer(HurtEffectTimerHandle, FTimerDelegate::CreateLambda(
+		[this]()
+		{
+			if (Flipbook) Flipbook->SetSpriteColor(DefaultColor);
+		}), .1f, false);
+
+	if (!DamageCauser) return;
+
+	FVector KnockbackDir = GetActorLocation() - DamageCauser->GetActorLocation();
+	KnockbackDir.Z = 0.f;
+
+	KnockbackDir = KnockbackDir.GetSafeNormal();
+
+	FVector KnockbackVelocity = KnockbackDir * KnockbackStrength;
+	KnockbackVelocity.Z = KnockbackLiftSpeed;
+
+	LaunchCharacter(KnockbackVelocity, true, true);
+}
+
+void ATabiCharacterBase::MoveAlongX(float ScaleX)
+{
+	if (FMath::IsNearlyZero(ScaleX)) return;
+
+	SetFacingRight(ScaleX > 0.f);
+
+	AddMovementInput(FVector::ForwardVector, ScaleX);
+}
+
+void ATabiCharacterBase::HandleSpeedChanged(ETabiStatType StatType, float NewSpeed, float OldSpeed)
+{
+	if (StatType != ETabiStatType::Speed) return;
+
+	GetCharacterMovement()->MaxWalkSpeed = NewSpeed;
 }
 
 void ATabiCharacterBase::HandleAttackAnimEnd()
@@ -105,7 +131,11 @@ void ATabiCharacterBase::HandleDeathAnimEnd()
 void ATabiCharacterBase::OnCharacterDead()
 {
 	if (!TabiAnimInstance) return;
+	CharacterState = ETabiCharacterState::Dead;
+	OnTabiCharacterDead.Broadcast();
 	Hurtbox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetCharacterMovement()->StopMovementImmediately();
+	GetCharacterMovement()->DisableMovement();
 	TabiAnimInstance->PlayDeadAnimation();
 }
 
@@ -114,6 +144,18 @@ void ATabiCharacterBase::SetFacingRight(bool bNewFacingRight)
 	if (bIsFacingRight == bNewFacingRight) return;
 	bIsFacingRight = bNewFacingRight;
 	OnFacingChanged();
+}
+
+bool ATabiCharacterBase::IsCharacterMovable() const
+{
+	return CharacterState != ETabiCharacterState::Attacking &&
+		CharacterState != ETabiCharacterState::Dead;
+}
+
+bool ATabiCharacterBase::IsAlive() const
+{
+	if (!VitalComponent) return false;
+	return VitalComponent->IsAlive();
 }
 
 void ATabiCharacterBase::OnFacingChanged()

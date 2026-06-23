@@ -13,8 +13,6 @@ UTabiVitalComponent::UTabiVitalComponent()
 void UTabiVitalComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
-	FillVitalValues();
 }
 
 bool UTabiVitalComponent::ReceiveDamage(float Damage)
@@ -39,7 +37,7 @@ bool UTabiVitalComponent::ReceiveHeal(float Heal)
 
 void UTabiVitalComponent::OnCharacterDead()
 {
-	OnTabiCharacterDead.Execute();
+	OnTabiHPDepleted.Broadcast();
 }
 
 void UTabiVitalComponent::InitVitals()
@@ -68,4 +66,9 @@ bool UTabiVitalComponent::IsInVulnerable() const
 {
 	//TODO: Estimate invulnerable conditions
 	return false;
+}
+
+bool UTabiVitalComponent::IsAlive() const
+{
+	return Vitals[ETabiVitalType::HP].CurrentValue > 0.f;
 }

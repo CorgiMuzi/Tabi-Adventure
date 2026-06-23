@@ -44,8 +44,6 @@ void ATabiPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 void ATabiPlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
-	StatComponent->OnStatCurrentValueChanged.AddDynamic(this, &ThisClass::HandleSpeedChanged);
 }
 
 void ATabiPlayerCharacter::PossessedBy(AController* NewController)
@@ -104,16 +102,9 @@ void ATabiPlayerCharacter::Move(const FInputActionValue& Value)
 {
 	if (!IsCharacterMovable()) return;
 
-	FVector2D InputAxis = Value.Get<FVector2D>();
-	InputAxis = InputAxis.GetClampedToMaxSize(1.f);
+	const float ScaleX = FMath::Clamp(Value.Get<FVector2D>().X, -1.f, 1.f);
 
-	if (!FMath::IsNearlyZero(InputAxis.X))
-	{
-		SetFacingRight(InputAxis.X > 0.f);
-	}
-
-	AddMovementInput(FVector::ForwardVector, InputAxis.X);
-	// AddMovementInput(FVector::LeftVector, InputAxis.Y);
+	MoveAlongX(ScaleX);
 }
 
 void ATabiPlayerCharacter::Jump()
@@ -151,24 +142,12 @@ void ATabiPlayerCharacter::Attack()
 	TabiAnimInstance->PlayAttackAnimation(AttackDef);
 }
 
-void ATabiPlayerCharacter::HandleSpeedChanged(ETabiStatType StatType, float NewSpeed, float OldSpeed)
-{
-	if (StatType != ETabiStatType::Speed) return;
-
-	GetCharacterMovement()->MaxWalkSpeed = NewSpeed;
-}
-
 void ATabiPlayerCharacter::HandleAttackAnimEnd()
 {
 	if (CharacterState != ETabiCharacterState::Attacking) return;
 
 	AttackComboStack = 0;
 	CharacterState = ETabiCharacterState::Idling;
-}
-
-bool ATabiPlayerCharacter::IsCharacterMovable() const
-{
-	return CharacterState != ETabiCharacterState::Attacking;
 }
 
 void ATabiPlayerCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
