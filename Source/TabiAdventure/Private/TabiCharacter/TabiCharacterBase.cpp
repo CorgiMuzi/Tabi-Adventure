@@ -9,17 +9,20 @@
 
 #include "TabiComponent/TabiVitalComponent.h"
 #include "TabiComponent/TabiStatComponent.h"
-#include "TabiComponent/TabiCombatComponent.h"
 
 #include "TabiAnimation/TabiAnimInstance.h"
+
+#include "TabiData/TabiAttackDefinition.h"
 
 #include "TabiGameFramework/TabiCollisionChannel.h"
 
 #include "PaperFlipbookComponent.h"
+#include "Perception/AIPerceptionStimuliSourceComponent.h"
+#include "Perception/AISense_Sight.h"
 
 ATabiCharacterBase::ATabiCharacterBase()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
 
 	GetCapsuleComponent()->SetCollisionProfileName(TEXT("TabiPawn"));
 
@@ -46,7 +49,9 @@ ATabiCharacterBase::ATabiCharacterBase()
 	VitalComponent = CreateDefaultSubobject<UTabiVitalComponent>(TEXT("VitalComponent"));
 	VitalComponent->OnTabiHPDepleted.AddDynamic(this, &ThisClass::OnCharacterDead);
 	StatComponent = CreateDefaultSubobject<UTabiStatComponent>(TEXT("StatComponent"));
-	CombatComponent = CreateDefaultSubobject<UTabiCombatComponent>(TEXT("CombatComponent"));
+
+	PerceptionStimuliSource = CreateDefaultSubobject<UAIPerceptionStimuliSourceComponent>(TEXT("PerceptionStimulSource"));
+	PerceptionStimuliSource->RegisterForSense(UAISense_Sight::StaticClass());
 }
 
 void ATabiCharacterBase::PostInitializeComponents()
@@ -69,6 +74,35 @@ void ATabiCharacterBase::BeginPlay()
 	StatComponent->OnStatCurrentValueChanged.AddDynamic(this, &ThisClass::HandleSpeedChanged);
 
 	Flipbook = GetSprite();
+}
+
+void ATabiCharacterBase::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	if (TabiAnimInstance)
+	{
+		TabiAnimInstance->SetSpeed(FMath::Abs(GetVelocity().X));
+		TabiAnimInstance->SetIsFalling(GetCharacterMovement()->IsFalling());
+	}
+}`
+
+void ATabiCharacterBase::Attack()
+{
+	if (CharacterState == ETabiCharacterState::Attacking ||
+		CharacterState == ETabiCharacterState::Jumping) return;
+
+	if (!TabiAnimInstance) return;
+
+	CharacterState = ETabiCharacterState::Attacking;
+
+	// Uncomment the below codes when implementing combo attack system.
+	/*
+	 * UTabiAttackDefinition* AttackDef = AttackDefinitions[AttackComboStack++];
+	 * if (AttackComboStack >= AttackDefinitions.Num()) return; AttackComboStack = 0;
+	*/
+	UTabiAttackDefinition* AttackDef = AttackDefinitions[FMath::RandRange(0, AttackDefinitions.Num()-1)];
+	TabiAnimInstance->PlayAttackAnimation(AttackDef);
 }
 
 void ATabiCharacterBase::ReceiveDamage(float Damage, const AActor* DamageCauser)
@@ -103,6 +137,11 @@ void ATabiCharacterBase::ReceiveDamage(float Damage, const AActor* DamageCauser)
 	LaunchCharacter(KnockbackVelocity, true, true);
 }
 
+void ATabiCharacterBase::SetTabiTeamId(const ETabiCharacterTeamID& TeamID)
+{
+	SetGenericTeamId(static_cast<uint8>(TeamID));
+}
+
 void ATabiCharacterBase::MoveAlongX(float ScaleX)
 {
 	if (FMath::IsNearlyZero(ScaleX)) return;
@@ -121,6 +160,9 @@ void ATabiCharacterBase::HandleSpeedChanged(ETabiStatType StatType, float NewSpe
 
 void ATabiCharacterBase::HandleAttackAnimEnd()
 {
+	if (CharacterState != ETabiCharacterState::Attacking) return;
+
+	CharacterState = ETabiCharacterState::Idling;
 }
 
 void ATabiCharacterBase::HandleDeathAnimEnd()

@@ -3,22 +3,16 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "InputActionValue.h"
 #include "GameFramework/PlayerController.h"
 #include "TabiPlayerController.generated.h"
 
-class UInputAction;
-class UInputMappingContext;
+class UAIPerceptionStimuliSourceComponent;
 
 UCLASS()
 class TABIADVENTURE_API ATabiPlayerController : public APlayerController
 {
 	GENERATED_BODY()
+public:
+	ATabiPlayerController();
 
-protected:
-	virtual void OnPossess(APawn* InPawn) override;
-
-	//~ Player Input
-
-	//~ End Player Input
 };

@@ -1,37 +1,37 @@
 ﻿// Copyright (c) 2026 CorgiMuzi. All Rights Reserved.
 
 
-#include "TabiAI/TabiPickPatrolTarget.h"
+#include "TabiAI/BTTask_TabiPickPatrolPoint.h"
 
 #include "AIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
 
-UTabiPickPatrolTarget::UTabiPickPatrolTarget()
+UBTTask_TabiPickPatrolPoint::UBTTask_TabiPickPatrolPoint()
 {
-	NodeName = TEXT("Pick Patrol Target");
+	NodeName = TEXT("Pick Patrol Point");
 }
 
-void UTabiPickPatrolTarget::InitializeFromAsset(UBehaviorTree& Asset)
+void UBTTask_TabiPickPatrolPoint::InitializeFromAsset(UBehaviorTree& Asset)
 {
 	Super::InitializeFromAsset(Asset);
 
 	if (const UBlackboardData* BBAsset = GetBlackboardAsset())
 	{
-		TargetLocationKey.ResolveSelectedKey(*BBAsset);
+		PatrolPointKey.ResolveSelectedKey(*BBAsset);
 		PatrolHalfRangeKey.ResolveSelectedKey(*BBAsset);
 	}else
 	{
-		TargetLocationKey.InvalidateResolvedKey();
+		PatrolPointKey.InvalidateResolvedKey();
 		PatrolHalfRangeKey.InvalidateResolvedKey();
 	}
 }
 
-uint16 UTabiPickPatrolTarget::GetInstanceMemorySize() const
+uint16 UBTTask_TabiPickPatrolPoint::GetInstanceMemorySize() const
 {
 	return sizeof(FTabiPickPatrolTargetMemory);
 }
 
-EBTNodeResult::Type UTabiPickPatrolTarget::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
+EBTNodeResult::Type UBTTask_TabiPickPatrolPoint::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
 	AAIController* AICon = OwnerComp.GetAIOwner();
 	if (!AICon) return EBTNodeResult::Failed;
@@ -48,7 +48,7 @@ EBTNodeResult::Type UTabiPickPatrolTarget::ExecuteTask(UBehaviorTreeComponent& O
 
 	const float PatrolHalfRange = BB->GetValueAsFloat(PatrolHalfRangeKey.SelectedKeyName);
 	const FVector TargetLocation = LastLocation + FVector(Memory->bGoingRight ? PatrolHalfRange : -PatrolHalfRange, 0.f, 0.f);
-	BB->SetValueAsVector(TargetLocationKey.SelectedKeyName, TargetLocation);
+	BB->SetValueAsVector(PatrolPointKey.SelectedKeyName, TargetLocation);
 
 	Memory->bGoingRight = !Memory->bGoingRight;
 

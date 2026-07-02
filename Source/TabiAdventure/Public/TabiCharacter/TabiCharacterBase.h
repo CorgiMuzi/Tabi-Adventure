@@ -3,22 +3,26 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GenericTeamAgentInterface.h"
 #include "PaperZDCharacter.h"
+#include "TabiData/TabiCharacterTeamId.h"
 
 #include "TabiCharacterBase.generated.h"
 
+class UAIPerceptionStimuliSourceComponent;
+class UAIPerceptionComponent;
 class UTabiAnimInstance;
 class UTabiCombatComponent;
 class UTabiStatComponent;
 class UTabiVitalComponent;
-
+class UTabiAttackDefinition;
 class UBoxComponent;
 
 UENUM(BlueprintType)
 enum class ETabiCharacterState : uint8
 {
 	Idling UMETA(DisplayName = "Idling"),
-	Jumping UMETA(DisplaWyName = "Jumping"),
+	Jumping UMETA(DisplayName = "Jumping"),
 	Attacking UMETA(DisplayName = "Attacking"),
 	Stunned UMETA(DisplayName = "Stunned"),
 	Dead UMETA(DisplayName = "Dead"),
@@ -27,10 +31,11 @@ enum class ETabiCharacterState : uint8
 };
 
 DECLARE_DYNAMIC_DELEGATE(FOnTabiVitalSetSignature);
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnTabiCharacterDeadSignature);
 
 UCLASS()
-class TABIADVENTURE_API ATabiCharacterBase : public APaperZDCharacter
+class TABIADVENTURE_API ATabiCharacterBase : public APaperZDCharacter, public IGenericTeamAgentInterface
 {
 	GENERATED_BODY()
 
@@ -39,6 +44,10 @@ public:
 
 	virtual void PostInitializeComponents() override;
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaSeconds) override;
+
+	UFUNCTION()
+	virtual void Attack();
 
 	void MoveAlongX(float ScaleX);
 
@@ -48,6 +57,12 @@ public:
 	FOnTabiVitalSetSignature OnVitalSet;
 	FOnTabiCharacterDeadSignature OnTabiCharacterDead;
 	//~ End Delegates
+
+	//~ AI Perception
+	virtual void SetTabiTeamId(const ETabiCharacterTeamID& TeamID);
+	virtual void SetGenericTeamId(const FGenericTeamId& TeamID) override { TabiTeamId = TeamID; }
+	virtual FGenericTeamId GetGenericTeamId() const override { return TabiTeamId; }
+	//~ End AI Perception
 
 protected:
 	UFUNCTION()
@@ -59,14 +74,11 @@ protected:
 	UFUNCTION()
 	virtual void OnCharacterDead();
 
-	UPROPERTY(VisibleAnywhere, Category="Tabi|Vital")
+	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UTabiVitalComponent> VitalComponent;
 
-	UPROPERTY(VisibleAnywhere, Category="Tabi|Stat")
+	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UTabiStatComponent> StatComponent;
-
-	UPROPERTY(VisibleAnywhere, Category="Tabi|Combat")
-	TObjectPtr<UTabiCombatComponent> CombatComponent;
 
 	//~ Character State
 	UFUNCTION()
@@ -76,6 +88,9 @@ protected:
 	//~ End Character State
 
 	//~ Combat
+	UPROPERTY(EditAnywhere, Category= "Tabi|Combat")
+	TArray<TObjectPtr<UTabiAttackDefinition>> AttackDefinitions;
+
 	UPROPERTY(VisibleAnywhere, Category="Tabi|Combat")
 	TObjectPtr<UBoxComponent> Hitbox;
 
@@ -105,6 +120,15 @@ protected:
 	UPROPERTY()
 	FLinearColor DefaultColor;
 	//~ End Animation
+
+	// AI Perception
+	UPROPERTY(VisibleAnywhere, Category= "Tabi|Perception")
+	TObjectPtr<UAIPerceptionStimuliSourceComponent> PerceptionStimuliSource;
+
+	FGenericTeamId TabiTeamId;
+	//~ AI Perception
+
+
 private:
 	void OnFacingChanged();
 
@@ -119,4 +143,3 @@ public:
 
 	UBoxComponent* GetHitbox() const { return Hitbox; }
 };
-

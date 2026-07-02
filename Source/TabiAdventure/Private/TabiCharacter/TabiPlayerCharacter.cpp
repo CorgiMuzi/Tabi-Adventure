@@ -9,9 +9,10 @@
 
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-#include "TabiComponent/TabiStatComponent.h"
 
 #include "TabiAnimation/TabiAnimInstance.h"
+
+#include "TabiComponent/TabiCombatComponent.h"
 
 ATabiPlayerCharacter::ATabiPlayerCharacter()
 {
@@ -26,8 +27,17 @@ ATabiPlayerCharacter::ATabiPlayerCharacter()
 	Camera = CreateDefaultSubobject<UCameraComponent>(FName("Camera"));
 	Camera->SetupAttachment(SpringArm);
 
+	CombatComponent = CreateDefaultSubobject<UTabiCombatComponent>(TEXT("CombatComponent"));
+
 	UCharacterMovementComponent* MovementComp = GetCharacterMovement();
 	MovementComp->SetPlaneConstraintOrigin(FVector(0.f, 5.f, 0.f));
+}
+
+void ATabiPlayerCharacter::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
+	SetTabiTeamId(ETabiCharacterTeamID::Player);
 }
 
 void ATabiPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -90,12 +100,6 @@ void ATabiPlayerCharacter::Tick(float DeltaSeconds)
 			MoveComp->GravityScale = ApexGravityScale;
 		}
 	}
-
-	if (TabiAnimInstance)
-	{
-		TabiAnimInstance->SetSpeed(FMath::Abs(GetVelocity().X));
-		TabiAnimInstance->SetIsFalling(GetCharacterMovement()->IsFalling());
-	}
 }
 
 void ATabiPlayerCharacter::Move(const FInputActionValue& Value)
@@ -126,31 +130,22 @@ void ATabiPlayerCharacter::Landed(const FHitResult& Hit)
 
 void ATabiPlayerCharacter::Attack()
 {
-	if (CharacterState == ETabiCharacterState::Attacking ||
-		CharacterState == ETabiCharacterState::Jumping) return;
-
-	if (!TabiAnimInstance) return;
-
-	CharacterState = ETabiCharacterState::Attacking;
-
-	// Uncomment the below codes when implementing combo attack system.
-	/*
-	 * UTabiAttackDefinition* AttackDef = AttackDefinitions[AttackComboStack++];
-	 * if (AttackComboStack >= AttackDefinitions.Num()) return; AttackComboStack = 0;
-	*/
-	UTabiAttackDefinition* AttackDef = AttackDefinitions[FMath::RandRange(0, AttackDefinitions.Num()-1)];
-	TabiAnimInstance->PlayAttackAnimation(AttackDef);
+	Super::Attack();
 }
 
 void ATabiPlayerCharacter::HandleAttackAnimEnd()
 {
-	if (CharacterState != ETabiCharacterState::Attacking) return;
+	Super::HandleAttackAnimEnd();
 
 	AttackComboStack = 0;
-	CharacterState = ETabiCharacterState::Idling;
 }
 
 void ATabiPlayerCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+	if (TabiAnimInstance)
+	{
+		TabiAnimInstance->StopAllAnimationOverrides();
+	}
+
 	Super::EndPlay(EndPlayReason);
 }

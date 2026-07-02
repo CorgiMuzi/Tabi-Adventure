@@ -4,28 +4,23 @@
 
 #include "CoreMinimal.h"
 #include "BehaviorTree/BTTaskNode.h"
-#include "TabiMoveToTarget.generated.h"
-
-struct FTargetLocationToMove
-{
-	FVector TargetLocationToMove;
-};
+#include "UBTTask_TabiMoveToPoint.generated.h"
 
 UCLASS()
-class TABIADVENTURE_API UTabiMoveToTarget : public UBTTaskNode
+class TABIADVENTURE_API UUBTTask_TabiMoveToPoint : public UBTTaskNode
 {
 	GENERATED_BODY()
 
 public:
-	UTabiMoveToTarget();
+	UUBTTask_TabiMoveToPoint();
 	virtual void InitializeFromAsset(UBehaviorTree& Asset) override;
 
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
-	virtual auto TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds) -> void override;
-
 protected:
-	UPROPERTY(EditAnywhere, Category="Tabi|AI")
-	FBlackboardKeySelector TargetLocationKey;
+	virtual void TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds)override;
+
+	UPROPERTY(VisibleAnywhere, Category="Tabi|AI")
+	FBlackboardKeySelector PatrolPointKey;
 
 	UPROPERTY(EditAnywhere, Category="Tabi|AI")
 	float RadiusTolerance;

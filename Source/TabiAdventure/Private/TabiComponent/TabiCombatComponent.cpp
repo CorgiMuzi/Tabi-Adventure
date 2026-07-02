@@ -41,19 +41,16 @@ void UTabiCombatComponent::EnableHitCollision()
 	AlreadyHitCharacters.Empty();
 	AlreadyHitCharacters.Add(GetOwner<ATabiCharacterBase>());
 
-	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Green, TEXT("Enable Hit Collision."));
 	if (Hitbox) Hitbox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 }
 
 void UTabiCombatComponent::DisableHitCollision()
 {
-	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, TEXT("Disable Hit Collision."));
 	if (Hitbox) Hitbox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 void UTabiCombatComponent::OnHitCollisionOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Yellow, FString::Printf(TEXT("Target: %s"), *OtherActor->GetName()));
 	if (ATabiCharacterBase* Target = Cast<ATabiCharacterBase>(OtherActor))
 	{
 		if (AlreadyHitCharacters.Contains(Target)) return;

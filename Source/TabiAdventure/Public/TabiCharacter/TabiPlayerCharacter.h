@@ -6,7 +6,7 @@
 #include "TabiCharacterBase.h"
 #include "TabiPlayerCharacter.generated.h"
 
-class UTabiAttackDefinition;
+
 class USpringArmComponent;
 class UCameraComponent;
 
@@ -16,6 +16,8 @@ struct FInputActionValue;
 class UInputMappingContext;
 class UInputAction;
 
+class UBoxComponent;
+
 UCLASS()
 class TABIADVENTURE_API ATabiPlayerCharacter : public ATabiCharacterBase
 {
@@ -23,11 +25,18 @@ class TABIADVENTURE_API ATabiPlayerCharacter : public ATabiCharacterBase
 
 public:
 	ATabiPlayerCharacter();
+	virtual void PostInitializeComponents() override;
 	virtual void BeginPlay() override;
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
+
+	//~ ATabiCharacterBase
+	virtual void Jump() override;
+    virtual void Landed(const FHitResult& Hit) override;
+	virtual void Attack() override;
+	//~ End ATabiCharacterBase
 
 protected:
 	//~ Camera
@@ -40,9 +49,7 @@ protected:
 
 	//~ Player Input
 	void Move(const FInputActionValue& Value);
-	virtual void Jump() override;
-	virtual void Landed(const FHitResult& Hit) override;
-	void Attack();
+
 
 	UPROPERTY(EditDefaultsOnly, Category= "Tabi|Input")
 	TObjectPtr<UInputMappingContext> LocomotionContext;
@@ -73,19 +80,17 @@ protected:
 	float FallingGravityScale;
 	//~ End Jump Velocity
 
-	//~ Attack
-	UPROPERTY(EditAnywhere, Category= "Tabi|Combat")
-	TArray<TObjectPtr<UTabiAttackDefinition>> AttackDefinitions;
-
+	//~ Combat
 	virtual void HandleAttackAnimEnd() override;
-	//~ End Attack
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UTabiCombatComponent> CombatComponent;
+	//~ End Combat
 
 private:
-
-
-	//~ Attack
+	//~ Combat
 	int32 AttackComboStack = 0;
-	//~ End Attack
+	//~ End Combat
 
 public:
 };

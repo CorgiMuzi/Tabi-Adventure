@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "BehaviorTree/BTTaskNode.h"
-#include "TabiPickPatrolTarget.generated.h"
+#include "BTTask_TabiPickPatrolPoint.generated.h"
 
 struct FTabiPickPatrolTargetMemory
 {
@@ -12,20 +12,19 @@ struct FTabiPickPatrolTargetMemory
 };
 
 UCLASS()
-class TABIADVENTURE_API UTabiPickPatrolTarget : public UBTTaskNode
+class TABIADVENTURE_API UBTTask_TabiPickPatrolPoint : public UBTTaskNode
 {
 	GENERATED_BODY()
 
 public:
-	UTabiPickPatrolTarget();
+	UBTTask_TabiPickPatrolPoint();
 	virtual void InitializeFromAsset(UBehaviorTree& Asset) override;
-	virtual uint16 GetInstanceMemorySize() const;
+	virtual uint16 GetInstanceMemorySize() const override;
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
 
 protected:
-	/// Target location will be removed when AI can move based on the direction not to the target point.
 	UPROPERTY(VisibleAnywhere, Category="Tabi|AI")
-	FBlackboardKeySelector TargetLocationKey;
+	FBlackboardKeySelector PatrolPointKey;
 
 	UPROPERTY(VisibleAnywhere, Category="Tabi|AI")
 	FBlackboardKeySelector PatrolHalfRangeKey;

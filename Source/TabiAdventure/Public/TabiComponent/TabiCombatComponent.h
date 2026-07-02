@@ -8,6 +8,7 @@
 
 class UPaperFlipbookComponent;
 class ATabiCharacterBase;
+class UTabiAttackDefinition;
 class UBoxComponent;
 
 UCLASS(ClassGroup=(Tabi), meta=(BlueprintSpawnableComponent))
@@ -27,6 +28,8 @@ public:
 
 	UFUNCTION()
 	void DisableHitCollision();
+
+	inline UBoxComponent* GetHitBox() const { return Hitbox; }
 
 protected:
 	UFUNCTION()
