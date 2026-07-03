@@ -4,15 +4,15 @@
 
 #include "CoreMinimal.h"
 #include "BehaviorTree/BTTaskNode.h"
-#include "UBTTask_TabiMoveToPoint.generated.h"
+#include "BTTask_TabiMoveToPoint.generated.h"
 
 UCLASS()
-class TABIADVENTURE_API UUBTTask_TabiMoveToPoint : public UBTTaskNode
+class TABIADVENTURE_API UBTTask_TabiMoveToPoint : public UBTTaskNode
 {
 	GENERATED_BODY()
 
 public:
-	UUBTTask_TabiMoveToPoint();
+	UBTTask_TabiMoveToPoint();
 	virtual void InitializeFromAsset(UBehaviorTree& Asset) override;
 
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;

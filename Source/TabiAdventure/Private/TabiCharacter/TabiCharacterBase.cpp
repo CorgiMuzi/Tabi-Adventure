@@ -85,12 +85,13 @@ void ATabiCharacterBase::Tick(float DeltaSeconds)
 		TabiAnimInstance->SetSpeed(FMath::Abs(GetVelocity().X));
 		TabiAnimInstance->SetIsFalling(GetCharacterMovement()->IsFalling());
 	}
-}`
+}
 
 void ATabiCharacterBase::Attack()
 {
 	if (CharacterState == ETabiCharacterState::Attacking ||
-		CharacterState == ETabiCharacterState::Jumping) return;
+		CharacterState == ETabiCharacterState::Jumping ||
+		CharacterState == ETabiCharacterState::Dead) return;
 
 	if (!TabiAnimInstance) return;
 
@@ -110,7 +111,7 @@ void ATabiCharacterBase::ReceiveDamage(float Damage, const AActor* DamageCauser)
 	// Return when failed to dealing damage.
 	if (!VitalComponent || !VitalComponent->ReceiveDamage(Damage)) return;
 	// Don't play hit reaction animations when character is dead.
-	if (!VitalComponent->IsAlive()) return;
+	if (CharacterState == ETabiCharacterState::Dead) return;
 
 	if (Flipbook)
 	{
@@ -128,6 +129,7 @@ void ATabiCharacterBase::ReceiveDamage(float Damage, const AActor* DamageCauser)
 
 	FVector KnockbackDir = GetActorLocation() - DamageCauser->GetActorLocation();
 	KnockbackDir.Z = 0.f;
+	KnockbackDir.Y = 0.f;
 
 	KnockbackDir = KnockbackDir.GetSafeNormal();
 
@@ -167,17 +169,22 @@ void ATabiCharacterBase::HandleAttackAnimEnd()
 
 void ATabiCharacterBase::HandleDeathAnimEnd()
 {
+	/* FIXME:
+	 *	CharacterState becomes dead state when vital components notify that character's HP is 0.
+	 *	CharacterBase catch that notify and change the state to dead but death animation could be playing at that moment.
+	 */
 	Destroy();
 }
 
 void ATabiCharacterBase::OnCharacterDead()
 {
-	if (!TabiAnimInstance) return;
 	CharacterState = ETabiCharacterState::Dead;
 	OnTabiCharacterDead.Broadcast();
 	Hurtbox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetCharacterMovement()->StopMovementImmediately();
 	GetCharacterMovement()->DisableMovement();
+
+	if (!TabiAnimInstance) return;
 	TabiAnimInstance->PlayDeadAnimation();
 }
 
@@ -196,8 +203,7 @@ bool ATabiCharacterBase::IsCharacterMovable() const
 
 bool ATabiCharacterBase::IsAlive() const
 {
-	if (!VitalComponent) return false;
-	return VitalComponent->IsAlive();
+	return CharacterState != ETabiCharacterState::Dead;
 }
 
 void ATabiCharacterBase::OnFacingChanged()

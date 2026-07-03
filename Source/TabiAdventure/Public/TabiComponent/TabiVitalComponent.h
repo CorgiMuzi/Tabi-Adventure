@@ -67,7 +67,6 @@ private:
 
 public:
 	bool IsInVulnerable() const;
-	bool IsAlive() const;
 
 	float GetCurrentValueByType(ETabiVitalType VitalType) const { return Vitals[VitalType].CurrentValue; }
 	float GetCurrentMaxByType(ETabiVitalType VitalType) const { return Vitals[VitalType].CurrentMax; }

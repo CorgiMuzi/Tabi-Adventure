@@ -22,6 +22,7 @@ bool UTabiVitalComponent::ReceiveDamage(float Damage)
 	if (IsInVulnerable()) return false;
 	const float NewHP = Vitals[ETabiVitalType::HP].CurrentValue - Damage;
 	Vitals[ETabiVitalType::HP].CurrentValue = FMath::Clamp(NewHP,0.f, Vitals[ETabiVitalType::HP].CurrentMax);
+
 	if (FMath::IsNearlyZero(Vitals[ETabiVitalType::HP].CurrentValue)) OnCharacterDead();
 	return true;
 }
@@ -66,9 +67,4 @@ bool UTabiVitalComponent::IsInVulnerable() const
 {
 	//TODO: Estimate invulnerable conditions
 	return false;
-}
-
-bool UTabiVitalComponent::IsAlive() const
-{
-	return Vitals[ETabiVitalType::HP].CurrentValue > 0.f;
 }

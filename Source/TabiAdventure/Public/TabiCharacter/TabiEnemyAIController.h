@@ -33,9 +33,6 @@ protected:
 	void UpdateTarget(AActor* Target, bool IsSensed);
 
 	//~ AI Perception
-	UPROPERTY(EditAnywhere, Category="Tabi|AI|Perception")
-	TObjectPtr<UAIPerceptionComponent> AIPerceptionComponent;
-
 	UPROPERTY(VisibleAnywhere, Category="Tabi|AI|Perception")
 	TObjectPtr<UAISenseConfig_Sight> SightConfig;
 

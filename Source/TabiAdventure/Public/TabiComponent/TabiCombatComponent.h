@@ -29,11 +29,9 @@ public:
 	UFUNCTION()
 	void DisableHitCollision();
 
-	inline UBoxComponent* GetHitBox() const { return Hitbox; }
-
 protected:
 	UFUNCTION()
-	void OnHitCollisionOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
+	void OnHitboxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
 
 	UPROPERTY()
 	TObjectPtr<UBoxComponent> Hitbox;

@@ -1,20 +1,20 @@
 ﻿// Copyright (c) 2026 CorgiMuzi. All Rights Reserved.
 
 
-#include "TabiAI/UBTTask_TabiMoveToPoint.h"
+#include "TabiAI/BTTask_TabiMoveToPoint.h"
 #include "TabiCharacter/TabiCharacterBase.h"
 #include "AIController.h"
 #include "BehaviorTree/BehaviorTree.h"
 #include "BehaviorTree/BlackboardComponent.h"
 
-UUBTTask_TabiMoveToPoint::UUBTTask_TabiMoveToPoint()
+UBTTask_TabiMoveToPoint::UBTTask_TabiMoveToPoint()
 {
 	NodeName = TEXT("Move To Target");
 
 	bNotifyTick = true;
 }
 
-void UUBTTask_TabiMoveToPoint::InitializeFromAsset(UBehaviorTree& Asset)
+void UBTTask_TabiMoveToPoint::InitializeFromAsset(UBehaviorTree& Asset)
 {
 	Super::InitializeFromAsset(Asset);
 
@@ -27,12 +27,12 @@ void UUBTTask_TabiMoveToPoint::InitializeFromAsset(UBehaviorTree& Asset)
 	}
 }
 
-EBTNodeResult::Type UUBTTask_TabiMoveToPoint::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
+EBTNodeResult::Type UBTTask_TabiMoveToPoint::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
 	return EBTNodeResult::InProgress;
 }
 
-void UUBTTask_TabiMoveToPoint::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds)
+void UBTTask_TabiMoveToPoint::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds)
 {
 	UBlackboardComponent* BB = OwnerComp.GetBlackboardComponent();
 	if (!BB) return FinishLatentTask(OwnerComp, EBTNodeResult::Failed);

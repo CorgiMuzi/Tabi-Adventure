@@ -18,7 +18,7 @@ void UTabiCombatComponent::BeginPlay()
 	if (ATabiCharacterBase* Owner = GetOwner<ATabiCharacterBase>())
 	{
 		Hitbox = Owner->GetHitbox();
-		Hitbox->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnHitCollisionOverlap);
+		Hitbox->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnHitboxBeginOverlap);
 		Hitbox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 		if (UTabiAnimInstance* AnimInstance = Cast<UTabiAnimInstance>(Owner->GetAnimInstance()))
@@ -31,7 +31,7 @@ void UTabiCombatComponent::BeginPlay()
 
 void UTabiCombatComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	Hitbox->OnComponentBeginOverlap.RemoveDynamic(this, &ThisClass::OnHitCollisionOverlap);
+	Hitbox->OnComponentBeginOverlap.RemoveDynamic(this, &ThisClass::OnHitboxBeginOverlap);
 
 	Super::EndPlay(EndPlayReason);
 }
@@ -49,7 +49,7 @@ void UTabiCombatComponent::DisableHitCollision()
 	if (Hitbox) Hitbox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
-void UTabiCombatComponent::OnHitCollisionOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void UTabiCombatComponent::OnHitboxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (ATabiCharacterBase* Target = Cast<ATabiCharacterBase>(OtherActor))
 	{
@@ -61,6 +61,6 @@ void UTabiCombatComponent::OnHitCollisionOverlap(UPrimitiveComponent* Overlapped
 
 void UTabiCombatComponent::Attack(ATabiCharacterBase* Target)
 {
-	// TODO: Referenc Attack Definition later.
+	// TODO: Reference Attack Definition later.
 	Target->ReceiveDamage(30.f, GetOwner());
 }

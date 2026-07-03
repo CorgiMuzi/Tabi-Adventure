@@ -42,7 +42,11 @@ void UTabiAnimInstance::PlayNotify_DisableHitCollision()
 
 void UTabiAnimInstance::HandleAttackAnimEnd(bool bIsCompleted)
 {
-	if (!bIsCompleted) return;
+	if (!bIsCompleted)
+	{
+		OnDisableHitCollision.Execute();
+		return;
+	}
 
 	OnAttackAnimEnd.Execute();
 }

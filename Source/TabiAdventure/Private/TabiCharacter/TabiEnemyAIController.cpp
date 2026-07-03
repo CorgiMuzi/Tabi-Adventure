@@ -14,10 +14,10 @@ ATabiEnemyAIController::ATabiEnemyAIController()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
-	AIPerceptionComponent = CreateDefaultSubobject<UAIPerceptionComponent>("AIPerceptionComponent");
 	SightConfig = CreateDefaultSubobject<UAISenseConfig_Sight>("SightConfig");
-	SightConfig->DetectionByAffiliation.bDetectEnemies = true;
-	AIPerceptionComponent->OnTargetPerceptionUpdated.AddDynamic(this, &ThisClass::HandleTargetPerceptionUpdated);
+
+	PerceptionComponent = CreateDefaultSubobject<UAIPerceptionComponent>("PerceptionComponent");
+	PerceptionComponent->OnTargetPerceptionUpdated.AddDynamic(this, &ThisClass::HandleTargetPerceptionUpdated);
 }
 
 void ATabiEnemyAIController::PostInitializeComponents()
@@ -27,9 +27,12 @@ void ATabiEnemyAIController::PostInitializeComponents()
 	SightConfig->SightRadius = SightRadius;
 	SightConfig->LoseSightRadius = LoseSightRadius;
 	SightConfig->PeripheralVisionAngleDegrees = PeripheralVisionHalfAngle;
-	AIPerceptionComponent->ConfigureSense(*SightConfig);
-	AIPerceptionComponent->SetDominantSense(*SightConfig->GetSenseImplementation());
-	AIPerceptionComponent->SetSenseEnabled(UAISense_Sight::StaticClass(), true);
+	SightConfig->DetectionByAffiliation.bDetectEnemies = true;
+	PerceptionComponent->ConfigureSense(*SightConfig);
+	PerceptionComponent->SetDominantSense(*SightConfig->GetSenseImplementation());
+	PerceptionComponent->SetSenseEnabled(UAISense_Sight::StaticClass(), true);
+
+	PerceptionComponent->RequestStimuliListenerUpdate();
 }
 
 void ATabiEnemyAIController::SetGenericTeamId(const FGenericTeamId& NewTeamID)
@@ -81,6 +84,8 @@ void ATabiEnemyAIController::HandleCharacterDeath()
 	if (!BB || !Enemy) return;
 
 	BB->SetValueAsBool(TabiEnemyBlackboardKey::IsAlive, Enemy->IsAlive());
+
+	PerceptionComponent->SetSenseEnabled(UAISense_Sight::StaticClass(), false);
 }
 
 void ATabiEnemyAIController::HandleTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)
