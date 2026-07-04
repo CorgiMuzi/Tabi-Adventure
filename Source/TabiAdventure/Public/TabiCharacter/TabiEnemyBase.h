@@ -21,7 +21,7 @@ public:
 	ATabiEnemyBase();
 	virtual void PostInitializeComponents() override;
 
-	virtual void Attack() override;
+	virtual bool HandleAttackInput() override;
 
 protected:
 	UPROPERTY(VisibleAnywhere)

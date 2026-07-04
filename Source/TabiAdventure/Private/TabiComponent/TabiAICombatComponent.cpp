@@ -18,6 +18,10 @@ void UTabiAICombatComponent::BeginPlay()
 	if (ATabiEnemyBase* Owner = GetOwner<ATabiEnemyBase>())
 	{
 		Hitbox = Owner->GetHitbox();
+		FVector HitboxExtent = Hitbox->GetUnscaledBoxExtent();
+		HitboxExtent.Y = AttackRange / 2.f;
+		Hitbox->SetBoxExtent(HitboxExtent);
+
 		Hitbox->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnHitboxBeginOverlap);
 		Hitbox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
@@ -32,7 +36,7 @@ void UTabiAICombatComponent::BeginPlay()
 void UTabiAICombatComponent::Attack(ATabiCharacterBase* Target)
 {
 	if (!Target) return;
-	Target->ReceiveDamage(30.f,GetOwner());
+	Target->ReceiveDamage(nullptr/*30.f*/,GetOwner());
 }
 
 void UTabiAICombatComponent::EnableHitCollision()

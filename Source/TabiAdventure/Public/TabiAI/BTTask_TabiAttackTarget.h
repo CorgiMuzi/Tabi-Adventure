@@ -17,9 +17,8 @@ class TABIADVENTURE_API UBTTask_TabiAttackTarget : public UBTTaskNode
 public:
 	UBTTask_TabiAttackTarget();
 
-	virtual void InitializeFromAsset(UBehaviorTree& Asset) override;
-
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
+	virtual void TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds) override;
 
 protected:
 };

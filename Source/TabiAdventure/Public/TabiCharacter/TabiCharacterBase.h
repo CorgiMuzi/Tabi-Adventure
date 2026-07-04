@@ -46,12 +46,11 @@ public:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
 
-	UFUNCTION()
-	virtual void Attack();
-
+	virtual bool HandleAttackInput();
 	void MoveAlongX(float ScaleX);
-
-	void ReceiveDamage(float Damage, const AActor* DamageCauser = nullptr);
+	// FIXME: AttackDefinition should not be null. Delete default value when the entire attack pipeline uses 'AttackDefinition'.
+	// I put the nullptr as default value to push the not buggy code to the git.
+	void ReceiveDamage(const UTabiAttackDefinition* AttackDefinition = nullptr, const AActor* DamageCauser = nullptr);
 
 	//~ Delegates
 	FOnTabiVitalSetSignature OnVitalSet;

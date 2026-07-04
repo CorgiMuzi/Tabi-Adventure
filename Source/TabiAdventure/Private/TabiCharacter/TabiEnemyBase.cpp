@@ -17,9 +17,9 @@ ATabiEnemyBase::ATabiEnemyBase()
 	AICombatComponent = CreateDefaultSubobject<UTabiAICombatComponent>("AICombatComponent");
 }
 
-void ATabiEnemyBase::Attack()
+bool ATabiEnemyBase::HandleAttackInput()
 {
-	Super::Attack();
+	return Super::HandleAttackInput();
 }
 
 void ATabiEnemyBase::PostInitializeComponents()

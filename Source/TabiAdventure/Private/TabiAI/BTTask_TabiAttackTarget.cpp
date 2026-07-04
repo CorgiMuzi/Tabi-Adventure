@@ -9,11 +9,7 @@
 
 UBTTask_TabiAttackTarget::UBTTask_TabiAttackTarget()
 {
-}
-
-void UBTTask_TabiAttackTarget::InitializeFromAsset(UBehaviorTree& Asset)
-{
-	Super::InitializeFromAsset(Asset);
+	bNotifyTick = true;
 }
 
 EBTNodeResult::Type UBTTask_TabiAttackTarget::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
@@ -23,7 +19,17 @@ EBTNodeResult::Type UBTTask_TabiAttackTarget::ExecuteTask(UBehaviorTreeComponent
 	ATabiEnemyBase* OwnerCharacter = Cast<ATabiEnemyBase>(OwnerPawn);
 	if (!OwnerCharacter) return EBTNodeResult::Failed;
 
-	OwnerCharacter->Attack();
+	OwnerCharacter->HandleAttackInput();
 
-	return EBTNodeResult::Succeeded;
+	return EBTNodeResult::InProgress;
+}
+
+void UBTTask_TabiAttackTarget::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds)
+{
+	APawn* Owner = OwnerComp.GetAIOwner() ? OwnerComp.GetAIOwner()->GetPawn() : nullptr;
+	const ATabiCharacterBase* OwnerCharacter = Owner ? Cast<ATabiCharacterBase>(Owner) : nullptr;
+	if (!OwnerCharacter) return FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
+
+	const EBTNodeResult::Type CurrentNodeResult = OwnerCharacter->GetCharacterState() != ETabiCharacterState::Attacking ? EBTNodeResult::Succeeded : EBTNodeResult::InProgress;
+	FinishLatentTask(OwnerComp, CurrentNodeResult);
 }

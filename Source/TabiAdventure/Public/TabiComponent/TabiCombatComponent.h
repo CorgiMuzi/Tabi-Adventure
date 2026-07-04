@@ -7,8 +7,8 @@
 #include "TabiCombatComponent.generated.h"
 
 class UPaperFlipbookComponent;
-class ATabiCharacterBase;
 class UTabiAttackDefinition;
+class ATabiCharacterBase;
 class UBoxComponent;
 
 UCLASS(ClassGroup=(Tabi), meta=(BlueprintSpawnableComponent))
@@ -21,7 +21,7 @@ public:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-	void Attack(ATabiCharacterBase* Target);
+	void Attack(ATabiCharacterBase* Target/*, const UTabiAttackDefinition* AttackDefinition*/);
 
 	UFUNCTION()
 	void EnableHitCollision();
@@ -37,6 +37,8 @@ protected:
 	TObjectPtr<UBoxComponent> Hitbox;
 
 private:
+	void SetupHitbox(ATabiCharacterBase* Owner);
+
 	UPROPERTY()
 	TArray<TObjectPtr<ATabiCharacterBase>> AlreadyHitCharacters;
 };

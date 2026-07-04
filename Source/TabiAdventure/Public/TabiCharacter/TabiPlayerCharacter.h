@@ -35,7 +35,10 @@ public:
 	//~ ATabiCharacterBase
 	virtual void Jump() override;
     virtual void Landed(const FHitResult& Hit) override;
-	virtual void Attack() override;
+	virtual bool HandleAttackInput() override;
+
+	UFUNCTION()
+	void HandleAttackInput();
 	//~ End ATabiCharacterBase
 
 protected:

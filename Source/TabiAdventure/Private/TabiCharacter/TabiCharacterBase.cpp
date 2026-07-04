@@ -14,8 +14,6 @@
 
 #include "TabiData/TabiAttackDefinition.h"
 
-#include "TabiGameFramework/TabiCollisionChannel.h"
-
 #include "PaperFlipbookComponent.h"
 #include "Perception/AIPerceptionStimuliSourceComponent.h"
 #include "Perception/AISense_Sight.h"
@@ -36,14 +34,11 @@ ATabiCharacterBase::ATabiCharacterBase()
 	bUseControllerRotationRoll = false;
 
 	Hitbox = CreateDefaultSubobject<UBoxComponent>(TEXT("Hitbox"));
-	Hitbox->SetCollisionResponseToAllChannels(ECR_Ignore);
-	Hitbox->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Overlap);
+	Hitbox->SetCollisionProfileName(TEXT("Hitbox"));
 	Hitbox->SetupAttachment(GetCapsuleComponent());
 
 	Hurtbox = CreateDefaultSubobject<UBoxComponent>(TEXT("Hurtbox"));
-	Hurtbox->SetCollisionObjectType(TABI_TRACE_HURTBOX);
-	Hurtbox->SetCollisionResponseToAllChannels(ECR_Ignore);
-	Hurtbox->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Overlap);
+	Hurtbox->SetCollisionProfileName(TEXT("Hurtbox"));
 	Hurtbox->SetupAttachment(GetCapsuleComponent());
 
 	VitalComponent = CreateDefaultSubobject<UTabiVitalComponent>(TEXT("VitalComponent"));
@@ -74,6 +69,7 @@ void ATabiCharacterBase::BeginPlay()
 	StatComponent->OnStatCurrentValueChanged.AddDynamic(this, &ThisClass::HandleSpeedChanged);
 
 	Flipbook = GetSprite();
+	DefaultColor = Flipbook->GetSpriteColor();
 }
 
 void ATabiCharacterBase::Tick(float DeltaSeconds)
@@ -87,35 +83,35 @@ void ATabiCharacterBase::Tick(float DeltaSeconds)
 	}
 }
 
-void ATabiCharacterBase::Attack()
+bool ATabiCharacterBase::HandleAttackInput()
 {
 	if (CharacterState == ETabiCharacterState::Attacking ||
 		CharacterState == ETabiCharacterState::Jumping ||
-		CharacterState == ETabiCharacterState::Dead) return;
+		CharacterState == ETabiCharacterState::Dead) return false;
 
-	if (!TabiAnimInstance) return;
+	if (!TabiAnimInstance) return false;
 
 	CharacterState = ETabiCharacterState::Attacking;
 
+	if (AttackDefinitions.IsEmpty()) return false;
 	// Uncomment the below codes when implementing combo attack system.
 	/*
 	 * UTabiAttackDefinition* AttackDef = AttackDefinitions[AttackComboStack++];
 	 * if (AttackComboStack >= AttackDefinitions.Num()) return; AttackComboStack = 0;
 	*/
 	UTabiAttackDefinition* AttackDef = AttackDefinitions[FMath::RandRange(0, AttackDefinitions.Num()-1)];
-	TabiAnimInstance->PlayAttackAnimation(AttackDef);
+	return TabiAnimInstance->PlayAttackAnimation(AttackDef);
 }
 
-void ATabiCharacterBase::ReceiveDamage(float Damage, const AActor* DamageCauser)
+void ATabiCharacterBase::ReceiveDamage(const UTabiAttackDefinition* AttackDefinition, const AActor* DamageCauser)
 {
 	// Return when failed to dealing damage.
-	if (!VitalComponent || !VitalComponent->ReceiveDamage(Damage)) return;
+	if (!VitalComponent || !VitalComponent->ReceiveDamage(AttackDefinition->Damage)) return;
 	// Don't play hit reaction animations when character is dead.
 	if (CharacterState == ETabiCharacterState::Dead) return;
 
 	if (Flipbook)
 	{
-		DefaultColor = Flipbook->GetSpriteColor();
 		Flipbook->SetSpriteColor(FLinearColor(1.f, 0.3f, 0.3f));
 	}
 
@@ -125,18 +121,19 @@ void ATabiCharacterBase::ReceiveDamage(float Damage, const AActor* DamageCauser)
 			if (Flipbook) Flipbook->SetSpriteColor(DefaultColor);
 		}), .1f, false);
 
-	if (!DamageCauser) return;
+	if (DamageCauser)
+	{
+		FVector KnockbackDir = GetActorLocation() - DamageCauser->GetActorLocation();
+		KnockbackDir.Z = 0.f;
+		KnockbackDir.Y = 0.f;
 
-	FVector KnockbackDir = GetActorLocation() - DamageCauser->GetActorLocation();
-	KnockbackDir.Z = 0.f;
-	KnockbackDir.Y = 0.f;
+		KnockbackDir = KnockbackDir.GetSafeNormal();
 
-	KnockbackDir = KnockbackDir.GetSafeNormal();
+		FVector KnockbackVelocity = KnockbackDir * KnockbackStrength;
+		KnockbackVelocity.Z = KnockbackLiftSpeed;
 
-	FVector KnockbackVelocity = KnockbackDir * KnockbackStrength;
-	KnockbackVelocity.Z = KnockbackLiftSpeed;
-
-	LaunchCharacter(KnockbackVelocity, true, true);
+		LaunchCharacter(KnockbackVelocity, true, true);
+	}
 }
 
 void ATabiCharacterBase::SetTabiTeamId(const ETabiCharacterTeamID& TeamID)
@@ -169,10 +166,6 @@ void ATabiCharacterBase::HandleAttackAnimEnd()
 
 void ATabiCharacterBase::HandleDeathAnimEnd()
 {
-	/* FIXME:
-	 *	CharacterState becomes dead state when vital components notify that character's HP is 0.
-	 *	CharacterBase catch that notify and change the state to dead but death animation could be playing at that moment.
-	 */
 	Destroy();
 }
 
@@ -183,6 +176,8 @@ void ATabiCharacterBase::OnCharacterDead()
 	Hurtbox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetCharacterMovement()->StopMovementImmediately();
 	GetCharacterMovement()->DisableMovement();
+
+	PerceptionStimuliSource->UnregisterFromPerceptionSystem();
 
 	if (!TabiAnimInstance) return;
 	TabiAnimInstance->PlayDeadAnimation();

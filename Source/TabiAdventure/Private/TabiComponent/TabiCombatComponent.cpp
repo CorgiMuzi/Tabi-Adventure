@@ -17,9 +17,7 @@ void UTabiCombatComponent::BeginPlay()
 
 	if (ATabiCharacterBase* Owner = GetOwner<ATabiCharacterBase>())
 	{
-		Hitbox = Owner->GetHitbox();
-		Hitbox->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnHitboxBeginOverlap);
-		Hitbox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		SetupHitbox(Owner);
 
 		if (UTabiAnimInstance* AnimInstance = Cast<UTabiAnimInstance>(Owner->GetAnimInstance()))
 		{
@@ -59,8 +57,18 @@ void UTabiCombatComponent::OnHitboxBeginOverlap(UPrimitiveComponent* OverlappedC
 	}
 }
 
+void UTabiCombatComponent::SetupHitbox(ATabiCharacterBase* Owner)
+{
+	Hitbox = Owner->GetHitbox();
+	FVector HitboxExtent = Hitbox->GetUnscaledBoxExtent();
+	// HitboxExtent.Y = AttackRange / 2.f;
+	Hitbox->SetBoxExtent(HitboxExtent);
+	Hitbox->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnHitboxBeginOverlap);
+	Hitbox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+}
+
 void UTabiCombatComponent::Attack(ATabiCharacterBase* Target)
 {
 	// TODO: Reference Attack Definition later.
-	Target->ReceiveDamage(30.f, GetOwner());
+	Target->ReceiveDamage(nullptr/*30.f*/, GetOwner());
 }

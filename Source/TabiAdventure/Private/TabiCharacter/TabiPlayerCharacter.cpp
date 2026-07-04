@@ -48,7 +48,7 @@ void ATabiPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 
 	EnhancedInput->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ThisClass::Move);
 	EnhancedInput->BindAction(JumpAction, ETriggerEvent::Started, this, &ThisClass::Jump);
-	EnhancedInput->BindAction(AttackAction, ETriggerEvent::Triggered, this, &ThisClass::Attack);
+	EnhancedInput->BindAction(AttackAction, ETriggerEvent::Triggered, this, &ThisClass::HandleAttackInput);
 }
 
 void ATabiPlayerCharacter::BeginPlay()
@@ -113,6 +113,7 @@ void ATabiPlayerCharacter::Move(const FInputActionValue& Value)
 
 void ATabiPlayerCharacter::Jump()
 {
+	if (CharacterState == ETabiCharacterState::Dead || CharacterState == ETabiCharacterState::Attacking) return;
 	CharacterState = ETabiCharacterState::Jumping;
 	if (TabiAnimInstance)
 	{
@@ -128,9 +129,14 @@ void ATabiPlayerCharacter::Landed(const FHitResult& Hit)
 	CharacterState = ETabiCharacterState::Idling;
 }
 
-void ATabiPlayerCharacter::Attack()
+void ATabiPlayerCharacter::HandleAttackInput()
 {
-	Super::Attack();
+	HandleAttackInput();
+}
+
+bool ATabiPlayerCharacter::HandleAttackInput()
+{
+	return Super::HandleAttackInput();
 }
 
 void ATabiPlayerCharacter::HandleAttackAnimEnd()
