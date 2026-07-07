@@ -9,6 +9,7 @@
 
 struct FAIStimulus;
 class UAISenseConfig_Sight;
+class UTabiCombatComponent;
 
 UCLASS()
 class TABIADVENTURE_API ATabiEnemyAIController : public AAIController
@@ -25,8 +26,8 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void OnPossess(APawn* InPawn) override;
+	virtual void OnUnPossess() override;
 
-	UFUNCTION()
 	void HandleAttackEnd(const FTabiRequestID RequestID, bool IsSucceeded);
 
 	UFUNCTION()
@@ -49,4 +50,8 @@ protected:
 	UPROPERTY(EditAnywhere, Category="Tabi|AI|Perception")
 	float PeripheralVisionHalfAngle = 180.f;
 	//~ End AI Perception
+
+private:
+	TWeakObjectPtr<UTabiCombatComponent> ObservedCombatComponent;
+	FDelegateHandle AttackEndHandle;
 };

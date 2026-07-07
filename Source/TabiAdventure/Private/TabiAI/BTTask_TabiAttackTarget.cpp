@@ -18,24 +18,36 @@ EBTNodeResult::Type UBTTask_TabiAttackTarget::ExecuteTask(UBehaviorTreeComponent
 	FTabiAttackTargetMemory* MyMemory = CastInstanceNodeMemory<FTabiAttackTargetMemory>(NodeMemory);
 
 	AAIController* MyController = OwnerComp.GetAIOwner();
-	if (MyController)
-	{
-		ATabiCharacterBase* OwnerCharacter = MyController->GetPawn<ATabiCharacterBase>();
+	if (!MyController) return EBTNodeResult::Failed;
 
-		FTabiRequestID AttackRequestID = OwnerCharacter->RequestAttack();
-		if (!AttackRequestID.IsValid()) return EBTNodeResult::Failed;
+	ATabiCharacterBase* OwnerCharacter = MyController->GetPawn<ATabiCharacterBase>();
+	if (!OwnerCharacter) return EBTNodeResult::Failed;
 
-		WaitForMessage(OwnerComp, TabiAIMessages::AttackFinished);
-		return EBTNodeResult::InProgress;
-	}
+	const FTabiRequestID AttackRequestID = OwnerCharacter->RequestAttack();
+	if (!AttackRequestID.IsValid()) return EBTNodeResult::Failed;
 
-	return EBTNodeResult::Failed;
+	MyMemory->AttackRequestID = AttackRequestID;
+	WaitForMessage(OwnerComp, TabiAIMessages::AttackFinished, AttackRequestID.GetID());
+	return EBTNodeResult::InProgress;
 }
 
 EBTNodeResult::Type UBTTask_TabiAttackTarget::AbortTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
+	FTabiAttackTargetMemory* MyMemory = CastInstanceNodeMemory<FTabiAttackTargetMemory>(NodeMemory);
 
-	return EBTNodeResult::Aborted;
+	if (MyMemory->AttackRequestID.IsValid())
+	{
+		AAIController* MyController = OwnerComp.GetAIOwner();
+		ATabiCharacterBase* OwnerCharacter = MyController ? MyController->GetPawn<ATabiCharacterBase>() : nullptr;
+		if (OwnerCharacter)
+		{
+			OwnerCharacter->StopAttack();
+		}
+
+		MyMemory->AttackRequestID = FTabiRequestID();
+	}
+
+	return Super::AbortTask(OwnerComp, NodeMemory);
 }
 
 uint16 UBTTask_TabiAttackTarget::GetInstanceMemorySize() const
@@ -52,4 +64,3 @@ void UBTTask_TabiAttackTarget::CleanupMemory(UBehaviorTreeComponent& OwnerComp, 
 {
 	CleanupNodeMemory<FTabiAttackTargetMemory>(NodeMemory, CleanupType);
 }
-

@@ -28,7 +28,7 @@ void UTabiCombatComponent::BeginPlay()
 		{
 			AnimInstance->OnEnableHitCollision.BindDynamic(this, &ThisClass::EnableHitCollision);
 			AnimInstance->OnDisableHitCollision.BindDynamic(this, &ThisClass::DisableHitCollision);
-			AnimInstance->OnAttackAnimEnd.AddDynamic(this, &ThisClass::HandleAttackEnd);
+			AnimInstance->OnAttackAnimEnd.AddDynamic(this, &ThisClass::FinishAttack);
 		}
 	}
 }
@@ -110,26 +110,36 @@ bool UTabiCombatComponent::Attack(ATabiCharacterBase* Target)
 	return Target->ReceiveDamage(CurrentAttack, GetOwner());
 }
 
-void UTabiCombatComponent::HandleAttackEnd(bool IsCompleted)
+void UTabiCombatComponent::FinishAttack(bool IsCompleted)
 {
-	IsCompleted ? FinishAttack() : StopAttack();
+	if (!CurrentRequestID.IsValid()) return;
+
+	const FTabiRequestID EndedRequestID = CurrentRequestID;
+	CurrentRequestID = FTabiRequestID();
+
+	OnTabiAttackEnd.Broadcast(EndedRequestID, IsCompleted);
 }
 
 void UTabiCombatComponent::StopAttack()
 {
-	CurrentAttack = nullptr;
-	OnTabiAttackEnd.Broadcast(GetCurrentRequestID(), false);
-}
+	if (!CurrentRequestID.IsValid()) return;
 
-void UTabiCombatComponent::FinishAttack()
-{
-	CurrentAttack = nullptr;
-	OnTabiAttackEnd.Broadcast(GetCurrentRequestID(), true);
+	if (AnimInstance.IsValid())
+	{
+		AnimInstance->StopAttackAnimation();
+	}
+	else
+	{
+		FinishAttack(false);
+	}
 }
 
 void UTabiCombatComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	Hitbox->OnComponentBeginOverlap.RemoveDynamic(this, &ThisClass::OnHitboxBeginOverlap);
+	if (Hitbox)
+	{
+		Hitbox->OnComponentBeginOverlap.RemoveDynamic(this, &ThisClass::OnHitboxBeginOverlap);
+	}
 
 	Super::EndPlay(EndPlayReason);
 }

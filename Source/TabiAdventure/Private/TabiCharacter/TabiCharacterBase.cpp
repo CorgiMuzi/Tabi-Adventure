@@ -99,12 +99,19 @@ FTabiRequestID ATabiCharacterBase::RequestAttack()
 	return AttackRequestID;
 }
 
+void ATabiCharacterBase::StopAttack()
+{
+	if (CombatComponent) CombatComponent->StopAttack();
+}
+
 bool ATabiCharacterBase::ReceiveDamage(const UTabiAttackDefinition* AttackDefinition, const AActor* DamageCauser)
 {
 	// Return when failed to dealing damage.
 	if (!VitalComponent || !VitalComponent->ReceiveDamage(AttackDefinition->GetDamage())) return false;
 	// Don't play hit reaction animations when character is dead.
 	if (CharacterState == ETabiCharacterState::Dead) return false;
+
+	StopAttack();
 
 	if (Flipbook)
 	{

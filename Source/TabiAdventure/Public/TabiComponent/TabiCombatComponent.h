@@ -30,9 +30,8 @@ public:
 	virtual bool Attack(ATabiCharacterBase* Target/*, const UTabiAttackDefinition* AttackDefinition*/);
 
 	UFUNCTION()
-	void HandleAttackEnd(bool IsCompleted);
+	void FinishAttack(bool IsCompleted);
 	virtual void StopAttack();
-	virtual void FinishAttack();
 
 	inline const UTabiAttackDefinition* GetCurrentAttack() const { return CurrentAttack; }
 

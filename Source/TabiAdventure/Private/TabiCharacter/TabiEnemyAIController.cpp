@@ -7,7 +7,7 @@
 #include "BehaviorTree/BlackboardComponent.h"
 #include "TabiGameFramework/TabiEnemyBlackboardKeys.h"
 #include "TabiCharacter/TabiEnemyBase.h"
-#include "TabiComponent/TabiAICombatComponent.h"
+#include "TabiComponent/TabiCombatComponent.h"
 #include "TabiAI/TabiAIMessages.h"
 
 #include "Perception/AIPerceptionComponent.h"
@@ -70,9 +70,10 @@ void ATabiEnemyAIController::OnPossess(APawn* InPawn)
 	ATabiEnemyBase* OwningCharacter = CastChecked<ATabiEnemyBase>(InPawn);
 	OwningCharacter->OnTabiCharacterDead.AddDynamic(this, &ThisClass::HandleCharacterDeath);
 
-	if (UTabiAICombatComponent* CombatComp = Cast<UTabiAICombatComponent>(OwningCharacter->GetCombatComponent()))
+	if (UTabiCombatComponent* CombatComp = OwningCharacter->GetCombatComponent())
 	{
-		CombatComp->OnTabiAttackEnd.AddUObject(this, &ThisClass::HandleAttackEnd);
+		ObservedCombatComponent = CombatComp;
+		AttackEndHandle = CombatComp->OnTabiAttackEnd.AddUObject(this, &ThisClass::HandleAttackEnd);
 	}
 
 	UBehaviorTree* BT = OwningCharacter->GetBehaviorTree();
@@ -85,11 +86,29 @@ void ATabiEnemyAIController::OnPossess(APawn* InPawn)
 	}
 }
 
+void ATabiEnemyAIController::OnUnPossess()
+{
+	if (ObservedCombatComponent.IsValid())
+	{
+		ObservedCombatComponent->OnTabiAttackEnd.Remove(AttackEndHandle);
+	}
+
+	ObservedCombatComponent.Reset();
+	AttackEndHandle.Reset();
+
+	if (ATabiCharacterBase* OwningCharacter = GetPawn<ATabiCharacterBase>())
+	{
+		OwningCharacter->OnTabiCharacterDead.RemoveDynamic(this, &ThisClass::ATabiEnemyAIController::HandleCharacterDeath);
+	}
+
+	Super::OnUnPossess();
+}
+
 void ATabiEnemyAIController::HandleAttackEnd(const FTabiRequestID RequestID, bool IsSucceeded)
 {
-	if (!IsSucceeded || !RequestID.IsValid()) return;
+	if (!RequestID.IsValid()) return;
 
-	FAIMessage AttackFinish(TabiAIMessages::AttackFinished, this, RequestID.GetID());
+	const FAIMessage AttackFinish(TabiAIMessages::AttackFinished, this, RequestID.GetID(), IsSucceeded);
 	FAIMessage::Send(this, AttackFinish);
 }
 

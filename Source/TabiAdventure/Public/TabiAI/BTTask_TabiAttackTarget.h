@@ -4,11 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "BehaviorTree/BTTaskNode.h"
+#include "TabiData/TabiTypes.h"
 #include "BTTask_TabiAttackTarget.generated.h"
 
 struct FTabiAttackTargetMemory
 {
-	FDelegateHandle OnAttackEndDelegateHandle;
+	FTabiRequestID AttackRequestID;
 };
 
 UCLASS()

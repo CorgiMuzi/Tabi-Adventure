@@ -24,6 +24,11 @@ bool UTabiAnimInstance::PlayAttackAnimation(const UPaperZDAnimSequence* AttackAn
 	return PlayAnimationOverride(AttackAnimSequence, TEXT("DefaultSlot"), 1.f, 0.f, FZDOnAnimationOverrideEndSignature::CreateUObject(this, &ThisClass::HandleAttackAnimEnd));
 }
 
+void UTabiAnimInstance::StopAttackAnimation()
+{
+	StopAnimationOverrideByGroup(TEXT("DefaultGroup"));
+}
+
 bool UTabiAnimInstance::PlayDeadAnimation(const UPaperZDAnimSequence* DeadAnimSequence)
 {
 	if(!DeadAnimSequence) UE_LOG(LogTemp, Warning, TEXT("Dead animtion is not set."));

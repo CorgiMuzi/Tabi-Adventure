@@ -134,9 +134,8 @@ void ATabiPlayerCharacter::HandleAttackInput()
 
 void ATabiPlayerCharacter::HandleAttackAnimEnd(bool IsCompleted)
 {
-	Super::HandleAttackAnimEnd(TODO);
-
 	AttackComboStack = 0;
+	Super::HandleAttackAnimEnd(IsCompleted);
 }
 
 void ATabiPlayerCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)

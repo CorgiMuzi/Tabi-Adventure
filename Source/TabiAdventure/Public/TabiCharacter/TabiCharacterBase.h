@@ -52,6 +52,7 @@ public:
 
 	//~ Combat
 	virtual FTabiRequestID RequestAttack();
+	void StopAttack();
 	/**
 	 * Apply damage to this character.
 	 * @param AttackDefinition Attack skill contenxt.

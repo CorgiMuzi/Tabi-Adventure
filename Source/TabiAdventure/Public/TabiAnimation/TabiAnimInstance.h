@@ -11,7 +11,7 @@ class UCharacterMovementComponent;
 
 class UTabiAttackDefinition;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAttackAnimEndSignature, bool /*IsCompleted*/);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAttackAnimEndSignature, bool, IsCompleted);
 DECLARE_DYNAMIC_DELEGATE(FOnDeadAnimEndSignature);
 DECLARE_DYNAMIC_DELEGATE(FEnableHitCollision);
 DECLARE_DYNAMIC_DELEGATE(FDisableHitCollision);
@@ -31,6 +31,7 @@ public:
 	/// @param AttackAnimSequence
 	/// @return Returns whether the animation has correctly been queued.
 	bool PlayAttackAnimation(const UPaperZDAnimSequence* AttackAnimSequence);
+	void StopAttackAnimation();
 	bool PlayDeadAnimation(const UPaperZDAnimSequence* DeadAnimSequence);
 
 	UFUNCTION(BlueprintCallable, Category="Tabi|Combat")
