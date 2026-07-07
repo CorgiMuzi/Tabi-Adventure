@@ -14,7 +14,7 @@
 
 #include "TabiComponent/TabiCombatComponent.h"
 
-ATabiPlayerCharacter::ATabiPlayerCharacter()
+ATabiPlayerCharacter::ATabiPlayerCharacter(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -26,8 +26,6 @@ ATabiPlayerCharacter::ATabiPlayerCharacter()
 
 	Camera = CreateDefaultSubobject<UCameraComponent>(FName("Camera"));
 	Camera->SetupAttachment(SpringArm);
-
-	CombatComponent = CreateDefaultSubobject<UTabiCombatComponent>(TEXT("CombatComponent"));
 
 	UCharacterMovementComponent* MovementComp = GetCharacterMovement();
 	MovementComp->SetPlaneConstraintOrigin(FVector(0.f, 5.f, 0.f));
@@ -131,17 +129,12 @@ void ATabiPlayerCharacter::Landed(const FHitResult& Hit)
 
 void ATabiPlayerCharacter::HandleAttackInput()
 {
-	HandleAttackInput();
+	RequestAttack();
 }
 
-bool ATabiPlayerCharacter::HandleAttackInput()
+void ATabiPlayerCharacter::HandleAttackAnimEnd(bool IsCompleted)
 {
-	return Super::HandleAttackInput();
-}
-
-void ATabiPlayerCharacter::HandleAttackAnimEnd()
-{
-	Super::HandleAttackAnimEnd();
+	Super::HandleAttackAnimEnd(TODO);
 
 	AttackComboStack = 0;
 }

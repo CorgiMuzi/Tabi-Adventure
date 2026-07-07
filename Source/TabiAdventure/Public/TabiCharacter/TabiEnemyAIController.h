@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "AIController.h"
+#include "TabiData/TabiTypes.h"
 #include "TabiEnemyAIController.generated.h"
 
 struct FAIStimulus;
@@ -24,6 +25,9 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void OnPossess(APawn* InPawn) override;
+
+	UFUNCTION()
+	void HandleAttackEnd(const FTabiRequestID RequestID, bool IsSucceeded);
 
 	UFUNCTION()
 	void HandleCharacterDeath();

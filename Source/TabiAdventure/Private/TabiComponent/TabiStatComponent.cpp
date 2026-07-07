@@ -9,6 +9,21 @@
 UTabiStatComponent::UTabiStatComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
+
+	InitStats();
+}
+
+void UTabiStatComponent::InitStats()
+{
+	for (uint8 i = 0; i < static_cast<uint8>(ETabiStatType::MAX); ++i)
+	{
+		const ETabiStatType Type = static_cast<ETabiStatType>(i);
+
+		if (!Stats.Contains(Type))
+		{
+			Stats.Emplace(Type, FTabiStat(0.f));
+		}
+	}
 }
 
 void UTabiStatComponent::BeginPlay()
@@ -21,25 +36,11 @@ void UTabiStatComponent::BeginPlay()
 	}
 }
 
-void UTabiStatComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+void UTabiStatComponent::FillStatValues()
 {
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-}
-
-void UTabiStatComponent::InitStat()
-{
-	for (uint8 i = 0; i < static_cast<uint8>(ETabiStatType::MAX); ++i)
+	for (auto& Stat : Stats)
 	{
-		const ETabiStatType Type = static_cast<ETabiStatType>(i);
-
-		if (!Stats.Contains(Type))
-		{
-			Stats.Emplace(Type, FTabiStat(0.f));
-			continue;
-		}
-
-		Stats[Type].CurrentValue = Stats[Type].BaseValue;
+		Stat.Value.CurrentValue = Stat.Value.BaseValue;
 	}
 }
 

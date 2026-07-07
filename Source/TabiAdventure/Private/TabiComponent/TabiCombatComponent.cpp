@@ -2,9 +2,13 @@
 
 
 #include "TabiComponent/TabiCombatComponent.h"
+
 #include "TabiAnimation/TabiAnimInstance.h"
 #include "TabiCharacter/TabiCharacterBase.h"
+#include "TabiData/TabiAttackDefinition.h"
 #include "Components/BoxComponent.h"
+
+uint32 UTabiCombatComponent::NextRequestID = 1;
 
 UTabiCombatComponent::UTabiCombatComponent()
 {
@@ -19,19 +23,30 @@ void UTabiCombatComponent::BeginPlay()
 	{
 		SetupHitbox(Owner);
 
-		if (UTabiAnimInstance* AnimInstance = Cast<UTabiAnimInstance>(Owner->GetAnimInstance()))
+		AnimInstance = Cast<UTabiAnimInstance>(Owner->GetAnimInstance());
+		if (AnimInstance)
 		{
 			AnimInstance->OnEnableHitCollision.BindDynamic(this, &ThisClass::EnableHitCollision);
 			AnimInstance->OnDisableHitCollision.BindDynamic(this, &ThisClass::DisableHitCollision);
+			AnimInstance->OnAttackAnimEnd.AddDynamic(this, &ThisClass::HandleAttackEnd);
 		}
 	}
 }
 
-void UTabiCombatComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void UTabiCombatComponent::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
-	Hitbox->OnComponentBeginOverlap.RemoveDynamic(this, &ThisClass::OnHitboxBeginOverlap);
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+}
 
-	Super::EndPlay(EndPlayReason);
+void UTabiCombatComponent::SetupHitbox(ATabiCharacterBase* Owner)
+{
+	Hitbox = Owner->GetHitbox();
+	// TODO: Place hitbox in right place based on attack half radius
+	FVector HitboxExtent = Hitbox->GetUnscaledBoxExtent();
+	HitboxExtent.Y = AttackHalfRadius;
+	Hitbox->SetBoxExtent(HitboxExtent);
+	Hitbox->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnHitboxBeginOverlap);
+	Hitbox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 void UTabiCombatComponent::EnableHitCollision()
@@ -49,26 +64,72 @@ void UTabiCombatComponent::DisableHitCollision()
 
 void UTabiCombatComponent::OnHitboxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (ATabiCharacterBase* Target = Cast<ATabiCharacterBase>(OtherActor))
+	ATabiCharacterBase* Target = Cast<ATabiCharacterBase>(OtherActor);
+	if (!Target) return;
+
+	ATabiCharacterBase* Owner = GetOwner<ATabiCharacterBase>();
+	if (!Owner) return;
+
+	// Do nothing if this character is not hostile to Target
+	if (Owner->GetTeamAttitudeTowards(*Target) != ETeamAttitude::Hostile) return;
+
+	if (!AlreadyHitCharacters.Contains(Target))
 	{
-		if (AlreadyHitCharacters.Contains(Target)) return;
 		AlreadyHitCharacters.Add(Target);
 		Attack(Target);
 	}
 }
 
-void UTabiCombatComponent::SetupHitbox(ATabiCharacterBase* Owner)
+FTabiRequestID UTabiCombatComponent::TryBeginAttack()
 {
-	Hitbox = Owner->GetHitbox();
-	FVector HitboxExtent = Hitbox->GetUnscaledBoxExtent();
-	// HitboxExtent.Y = AttackRange / 2.f;
-	Hitbox->SetBoxExtent(HitboxExtent);
-	Hitbox->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnHitboxBeginOverlap);
-	Hitbox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	const UTabiAttackDefinition* AttackDef = SelectAttackDefinition();
+	if (AttackDef == nullptr) return FTabiRequestID(0);
+
+	if (!AnimInstance.IsValid()) return FTabiRequestID(0);
+	const bool IsAnimQueued = AnimInstance->PlayAttackAnimation(AttackDef->GetAnimSequence());
+	if (!IsAnimQueued) return FTabiRequestID(0);
+
+	StoreRequestID();
+	CurrentAttack = AttackDef;
+
+	return GetCurrentRequestID();
 }
 
-void UTabiCombatComponent::Attack(ATabiCharacterBase* Target)
+const UTabiAttackDefinition* UTabiCombatComponent::SelectAttackDefinition()
 {
-	// TODO: Reference Attack Definition later.
-	Target->ReceiveDamage(nullptr/*30.f*/, GetOwner());
+	// TODO: Make combo attack system. Don't select next attack definition randomly.
+	if (AttackDefinitions.IsEmpty()) return nullptr;
+	UTabiAttackDefinition* AttackDef = AttackDefinitions[FMath::RandRange(0, AttackDefinitions.Num() - 1)];
+
+	return AttackDef;
+}
+
+bool UTabiCombatComponent::Attack(ATabiCharacterBase* Target)
+{
+	if (!Target) return false;
+	return Target->ReceiveDamage(CurrentAttack, GetOwner());
+}
+
+void UTabiCombatComponent::HandleAttackEnd(bool IsCompleted)
+{
+	IsCompleted ? FinishAttack() : StopAttack();
+}
+
+void UTabiCombatComponent::StopAttack()
+{
+	CurrentAttack = nullptr;
+	OnTabiAttackEnd.Broadcast(GetCurrentRequestID(), false);
+}
+
+void UTabiCombatComponent::FinishAttack()
+{
+	CurrentAttack = nullptr;
+	OnTabiAttackEnd.Broadcast(GetCurrentRequestID(), true);
+}
+
+void UTabiCombatComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Hitbox->OnComponentBeginOverlap.RemoveDynamic(this, &ThisClass::OnHitboxBeginOverlap);
+
+	Super::EndPlay(EndPlayReason);
 }

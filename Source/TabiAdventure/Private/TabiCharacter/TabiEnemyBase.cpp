@@ -7,19 +7,12 @@
 
 #include "GameFramework/CharacterMovementComponent.h"
 
-ATabiEnemyBase::ATabiEnemyBase()
+ATabiEnemyBase::ATabiEnemyBase(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer.SetDefaultSubobjectClass<UTabiAICombatComponent>(Super::TabiCombatComponentName))
 {
 	UCharacterMovementComponent* MovementComp = GetCharacterMovement();
 	MovementComp->SetPlaneConstraintOrigin(FVector(0.f, 0.f, 0.f));
 
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
-
-	AICombatComponent = CreateDefaultSubobject<UTabiAICombatComponent>("AICombatComponent");
-}
-
-bool ATabiEnemyBase::HandleAttackInput()
-{
-	return Super::HandleAttackInput();
 }
 
 void ATabiEnemyBase::PostInitializeComponents()
@@ -27,19 +20,25 @@ void ATabiEnemyBase::PostInitializeComponents()
 	Super::PostInitializeComponents();
 
 	SetTabiTeamId(ETabiCharacterTeamID::Enemy);
+	AICombatComponent = Cast<UTabiAICombatComponent>(CombatComponent);
 }
 
-float ATabiEnemyBase::GetAttackRange() const
+FTabiRequestID ATabiEnemyBase::RequestAttack()
 {
-	return AICombatComponent ? AICombatComponent->GetAttackRange() : 0.f;
+	return Super::RequestAttack();
 }
 
-float ATabiEnemyBase::GetMinChaseRadius() const
+float ATabiEnemyBase::GetAttackHalfRadius() const
 {
-	return AICombatComponent ? AICombatComponent->GetMinChaseRadius() : 0.f;
+	return AICombatComponent ? AICombatComponent->GetAttackHalfRadius() : 0.f;
 }
 
-float ATabiEnemyBase::GetMaxChaseRadius() const
+float ATabiEnemyBase::GetMinChaseHalfRadius() const
 {
-	return AICombatComponent ? AICombatComponent->GetMaxChaseRadius() : 0.f;
+	return AICombatComponent ? AICombatComponent->GetMinChaseHalfRadius() : 0.f;
+}
+
+float ATabiEnemyBase::GetMaxChaseHalfRadius() const
+{
+	return AICombatComponent ? AICombatComponent->GetMaxChaseHalfRadius() : 0.f;
 }

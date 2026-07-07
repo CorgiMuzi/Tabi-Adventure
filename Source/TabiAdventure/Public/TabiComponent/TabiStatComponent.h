@@ -16,8 +16,9 @@ enum class ETabiStatType : uint8
 	Agility UMETA(DisplayName="Agility"),
 	Intelligence UMETA(DisplayName="Intelligence"),
 	Speed UMETA(DisplayName="Speed"),
+	Resistance UMETA(DisplayName="Resistance"),
 
-	MAX UMETA(DisplayName="MAX")
+	MAX UMETA(Hidden)
 };
 
 USTRUCT(BlueprintType)
@@ -46,7 +47,8 @@ public:
 	UTabiStatComponent();
 
 	virtual void BeginPlay() override;
-	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
+	void FillStatValues();
 
 	//~ Stat Delegates
 	FOnStatChanged OnStatCurrentValueChanged;
@@ -61,7 +63,7 @@ protected:
 	TObjectPtr<UCharacterMovementComponent> CharacterMovement;
 
 private:
-	void InitStat();
+	void InitStats();
 
 public:
 	void SetStatCurrentValue(ETabiStatType StatType, float NewValue);

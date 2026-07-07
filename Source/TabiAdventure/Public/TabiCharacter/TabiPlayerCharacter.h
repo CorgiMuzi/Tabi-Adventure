@@ -24,7 +24,7 @@ class TABIADVENTURE_API ATabiPlayerCharacter : public ATabiCharacterBase
 	GENERATED_BODY()
 
 public:
-	ATabiPlayerCharacter();
+	ATabiPlayerCharacter(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 	virtual void PostInitializeComponents() override;
 	virtual void BeginPlay() override;
 	virtual void PossessedBy(AController* NewController) override;
@@ -35,10 +35,9 @@ public:
 	//~ ATabiCharacterBase
 	virtual void Jump() override;
     virtual void Landed(const FHitResult& Hit) override;
-	virtual bool HandleAttackInput() override;
 
 	UFUNCTION()
-	void HandleAttackInput();
+	virtual void HandleAttackInput();
 	//~ End ATabiCharacterBase
 
 protected:
@@ -84,10 +83,7 @@ protected:
 	//~ End Jump Velocity
 
 	//~ Combat
-	virtual void HandleAttackAnimEnd() override;
-
-	UPROPERTY(VisibleAnywhere)
-	TObjectPtr<UTabiCombatComponent> CombatComponent;
+	virtual void HandleAttackAnimEnd(bool IsCompleted) override;
 	//~ End Combat
 
 private:

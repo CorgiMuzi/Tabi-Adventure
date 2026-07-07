@@ -13,7 +13,7 @@ enum class ETabiVitalType : uint8
 	MP UMETA(DisplayName="MP"),
 	Stamina UMETA(DisplayName="Stamina"),
 
-	MAX UMETA(DisplayName="MAX")
+	MAX UMETA(Hidden)
 };
 
 USTRUCT(BlueprintType)
@@ -54,7 +54,6 @@ public:
 	bool ReceiveHeal(float Heal);
 
 	FOnTabiVitalDepletedSignature OnTabiHPDepleted;
-
 
 protected:
 	void OnCharacterDead();

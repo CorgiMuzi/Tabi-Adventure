@@ -3,9 +3,12 @@
 
 #include "TabiCharacter/TabiEnemyAIController.h"
 
+#include "BrainComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "TabiGameFramework/TabiEnemyBlackboardKeys.h"
 #include "TabiCharacter/TabiEnemyBase.h"
+#include "TabiComponent/TabiAICombatComponent.h"
+#include "TabiAI/TabiAIMessages.h"
 
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AISenseConfig_Sight.h"
@@ -64,17 +67,30 @@ void ATabiEnemyAIController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 
-	ATabiEnemyBase* Enemy = CastChecked<ATabiEnemyBase>(InPawn);
-	Enemy->OnTabiCharacterDead.AddDynamic(this, &ThisClass::HandleCharacterDeath);
+	ATabiEnemyBase* OwningCharacter = CastChecked<ATabiEnemyBase>(InPawn);
+	OwningCharacter->OnTabiCharacterDead.AddDynamic(this, &ThisClass::HandleCharacterDeath);
 
-	UBehaviorTree* BT = Enemy->GetBehaviorTree();
+	if (UTabiAICombatComponent* CombatComp = Cast<UTabiAICombatComponent>(OwningCharacter->GetCombatComponent()))
+	{
+		CombatComp->OnTabiAttackEnd.AddUObject(this, &ThisClass::HandleAttackEnd);
+	}
+
+	UBehaviorTree* BT = OwningCharacter->GetBehaviorTree();
 	RunBehaviorTree(BT);
 
 	if (UBlackboardComponent* BB = GetBlackboardComponent())
 	{
-		BB->SetValueAsFloat(TabiEnemyBlackboardKey::PatrolHalfRange, Enemy->GetPatrolHalfRange());
-		BB->SetValueAsBool(TabiEnemyBlackboardKey::IsAlive, Enemy->IsAlive());
+		BB->SetValueAsFloat(TabiEnemyBlackboardKey::PatrolHalfRange, OwningCharacter->GetPatrolHalfRange());
+		BB->SetValueAsBool(TabiEnemyBlackboardKey::IsAlive, OwningCharacter->IsAlive());
 	}
+}
+
+void ATabiEnemyAIController::HandleAttackEnd(const FTabiRequestID RequestID, bool IsSucceeded)
+{
+	if (!IsSucceeded || !RequestID.IsValid()) return;
+
+	FAIMessage AttackFinish(TabiAIMessages::AttackFinished, this, RequestID.GetID());
+	FAIMessage::Send(this, AttackFinish);
 }
 
 void ATabiEnemyAIController::HandleCharacterDeath()

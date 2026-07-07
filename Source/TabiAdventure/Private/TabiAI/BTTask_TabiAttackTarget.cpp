@@ -5,31 +5,51 @@
 
 #include "BehaviorTree/BehaviorTree.h"
 #include "AIController.h"
-#include "TabiCharacter/TabiEnemyBase.h"
+#include "TabiCharacter/TabiCharacterBase.h"
+#include "TabiAI/TabiAIMessages.h"
 
 UBTTask_TabiAttackTarget::UBTTask_TabiAttackTarget()
 {
-	bNotifyTick = true;
+	bNotifyTick = false;
 }
 
 EBTNodeResult::Type UBTTask_TabiAttackTarget::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
-	APawn* OwnerPawn = OwnerComp.GetAIOwner() ? OwnerComp.GetAIOwner()->GetPawn() : nullptr;
-	if (!OwnerPawn) return EBTNodeResult::Failed;
-	ATabiEnemyBase* OwnerCharacter = Cast<ATabiEnemyBase>(OwnerPawn);
-	if (!OwnerCharacter) return EBTNodeResult::Failed;
+	FTabiAttackTargetMemory* MyMemory = CastInstanceNodeMemory<FTabiAttackTargetMemory>(NodeMemory);
 
-	OwnerCharacter->HandleAttackInput();
+	AAIController* MyController = OwnerComp.GetAIOwner();
+	if (MyController)
+	{
+		ATabiCharacterBase* OwnerCharacter = MyController->GetPawn<ATabiCharacterBase>();
 
-	return EBTNodeResult::InProgress;
+		FTabiRequestID AttackRequestID = OwnerCharacter->RequestAttack();
+		if (!AttackRequestID.IsValid()) return EBTNodeResult::Failed;
+
+		WaitForMessage(OwnerComp, TabiAIMessages::AttackFinished);
+		return EBTNodeResult::InProgress;
+	}
+
+	return EBTNodeResult::Failed;
 }
 
-void UBTTask_TabiAttackTarget::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds)
+EBTNodeResult::Type UBTTask_TabiAttackTarget::AbortTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
-	APawn* Owner = OwnerComp.GetAIOwner() ? OwnerComp.GetAIOwner()->GetPawn() : nullptr;
-	const ATabiCharacterBase* OwnerCharacter = Owner ? Cast<ATabiCharacterBase>(Owner) : nullptr;
-	if (!OwnerCharacter) return FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
 
-	const EBTNodeResult::Type CurrentNodeResult = OwnerCharacter->GetCharacterState() != ETabiCharacterState::Attacking ? EBTNodeResult::Succeeded : EBTNodeResult::InProgress;
-	FinishLatentTask(OwnerComp, CurrentNodeResult);
+	return EBTNodeResult::Aborted;
 }
+
+uint16 UBTTask_TabiAttackTarget::GetInstanceMemorySize() const
+{
+	return sizeof(FTabiAttackTargetMemory);
+}
+
+void UBTTask_TabiAttackTarget::InitializeMemory(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, EBTMemoryInit::Type InitType) const
+{
+	InitializeNodeMemory<FTabiAttackTargetMemory>(NodeMemory, InitType);
+}
+
+void UBTTask_TabiAttackTarget::CleanupMemory(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, EBTMemoryClear::Type CleanupType) const
+{
+	CleanupNodeMemory<FTabiAttackTargetMemory>(NodeMemory, CleanupType);
+}
+

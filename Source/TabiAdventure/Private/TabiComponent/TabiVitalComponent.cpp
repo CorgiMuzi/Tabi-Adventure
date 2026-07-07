@@ -10,9 +10,31 @@ UTabiVitalComponent::UTabiVitalComponent()
 	InitVitals();
 }
 
+void UTabiVitalComponent::InitVitals()
+{
+	for (uint8 i = 0; i < static_cast<uint8>(ETabiVitalType::MAX); ++i)
+	{
+		const ETabiVitalType Type = static_cast<ETabiVitalType>(i);
+
+		if (!Vitals.Contains(Type))
+		{
+			Vitals.Emplace(Type, FTabiVital(0.f, 0.f));
+		}
+	}
+}
+
 void UTabiVitalComponent::BeginPlay()
 {
 	Super::BeginPlay();
+}
+
+void UTabiVitalComponent::FillVitalValues()
+{
+	for (auto& Vital : Vitals)
+	{
+		Vital.Value.CurrentMax = Vital.Value.BaseMax;
+		Vital.Value.CurrentValue = Vital.Value.BaseValue;
+	}
 }
 
 bool UTabiVitalComponent::ReceiveDamage(float Damage)
@@ -41,27 +63,6 @@ void UTabiVitalComponent::OnCharacterDead()
 	OnTabiHPDepleted.Broadcast();
 }
 
-void UTabiVitalComponent::InitVitals()
-{
-	for (uint8 i = 0; i < static_cast<uint8>(ETabiVitalType::MAX); ++i)
-	{
-		const ETabiVitalType Type = static_cast<ETabiVitalType>(i);
-
-		if (!Vitals.Contains(Type))
-		{
-			Vitals.Emplace(Type, FTabiVital(0.f, 0.f));
-		}
-	}
-}
-
-void UTabiVitalComponent::FillVitalValues()
-{
-	for (auto& Vital : Vitals)
-	{
-		Vital.Value.CurrentMax = Vital.Value.BaseMax;
-		Vital.Value.CurrentValue = Vital.Value.BaseValue;
-	}
-}
 
 bool UTabiVitalComponent::IsInVulnerable() const
 {

@@ -7,5 +7,5 @@ enum class ETabiCharacterTeamID : uint8
 	Player = 0 UMETA(DisplayName = "Player"),
 	Enemy = 1 UMETA(DisplayName = "Enemy"),
 
-	MAX UMETA(DisplayName = "MAX")
+	MAX UMETA(Hidden)
 };

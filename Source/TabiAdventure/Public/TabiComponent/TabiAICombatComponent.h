@@ -3,51 +3,28 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/ActorComponent.h"
+#include "TabiCombatComponent.h"
 #include "TabiAICombatComponent.generated.h"
 
-class ATabiCharacterBase;
-class UBoxComponent;
 
-UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
-class TABIADVENTURE_API UTabiAICombatComponent : public UActorComponent
+UCLASS(ClassGroup=(Tabi), meta=(BlueprintSpawnableComponent))
+class TABIADVENTURE_API UTabiAICombatComponent : public UTabiCombatComponent
 {
 	GENERATED_BODY()
 
 public:
+	// Sets default values for this component's properties
 	UTabiAICombatComponent();
 
-	virtual void BeginPlay() override;
+	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 
-	void Attack(ATabiCharacterBase* Target);
-
-	UFUNCTION()
-	void EnableHitCollision();
-
-	UFUNCTION()
-	void DisableHitCollision();
-
-	inline float GetAttackRange() const { return AttackRange; }
-	inline float GetMinChaseRadius() const { return MinChaseRadius; }
-	inline float GetMaxChaseRadius() const { return MaxChaseRadius; }
+	inline float GetMinChaseHalfRadius() const { return MinChaseHalfRadius; }
+	inline float GetMaxChaseHalfRadius() const { return MaxChaseHalfRadius; }
 
 protected:
-	UFUNCTION()
-	void OnHitboxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
+	UPROPERTY(EditAnywhere, meta=(ClampMin="0"))
+	float MinChaseHalfRadius = 0.f;
 
 	UPROPERTY(EditAnywhere, meta=(ClampMin="0"))
-	float AttackRange;
-
-	UPROPERTY(EditAnywhere, meta=(ClampMin="0"))
-	float MinChaseRadius;
-
-	UPROPERTY(EditAnywhere, meta=(ClampMin="0"))
-	float MaxChaseRadius;\
-
-private:
-	UPROPERTY()
-	TObjectPtr<UBoxComponent> Hitbox;
-
-	UPROPERTY()
-	TArray<TObjectPtr<ATabiCharacterBase>> AlreadyHitCharacters;
+	float MaxChaseHalfRadius = 0.f;
 };

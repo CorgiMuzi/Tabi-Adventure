@@ -18,15 +18,15 @@ void UTabiAnimInstance::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
-bool UTabiAnimInstance::PlayAttackAnimation(UTabiAttackDefinition* AttackDef)
+bool UTabiAnimInstance::PlayAttackAnimation(const UPaperZDAnimSequence* AttackAnimSequence)
 {
-	if (!AttackDef || !AttackDef->AnimSequence) return false;
-	return PlayAnimationOverride(AttackDef->AnimSequence, TEXT("DefaultSlot"), 1.f, 0.f, FZDOnAnimationOverrideEndSignature::CreateUObject(this, &ThisClass::HandleAttackAnimEnd));
+	if (!AttackAnimSequence) UE_LOG(LogTemp, Warning, TEXT("Attack animation is not set."));
+	return PlayAnimationOverride(AttackAnimSequence, TEXT("DefaultSlot"), 1.f, 0.f, FZDOnAnimationOverrideEndSignature::CreateUObject(this, &ThisClass::HandleAttackAnimEnd));
 }
 
-bool UTabiAnimInstance::PlayDeadAnimation()
+bool UTabiAnimInstance::PlayDeadAnimation(const UPaperZDAnimSequence* DeadAnimSequence)
 {
-	if (!DeadAnimSequence) return false;
+	if(!DeadAnimSequence) UE_LOG(LogTemp, Warning, TEXT("Dead animtion is not set."));
 	return PlayAnimationOverride(DeadAnimSequence, TEXT("DefaultSlot"), 1.f, 0, FZDOnAnimationOverrideEndSignature::CreateUObject(this, &ThisClass::HandleDeadAnimEnd));
 }
 
@@ -40,20 +40,19 @@ void UTabiAnimInstance::PlayNotify_DisableHitCollision()
 	OnDisableHitCollision.Execute();
 }
 
-void UTabiAnimInstance::HandleAttackAnimEnd(bool bIsCompleted)
+void UTabiAnimInstance::HandleAttackAnimEnd(bool IsCompleted)
 {
-	if (!bIsCompleted)
+	if (!IsCompleted)
 	{
 		OnDisableHitCollision.Execute();
-		return;
 	}
 
-	OnAttackAnimEnd.Execute();
+	OnAttackAnimEnd.Broadcast(IsCompleted);
 }
 
-void UTabiAnimInstance::HandleDeadAnimEnd(bool bIsCompleted)
+void UTabiAnimInstance::HandleDeadAnimEnd(bool IsCompleted)
 {
-	if (!bIsCompleted) return;
+	if (!IsCompleted) return;
 
 	OnDeathAnimEnd.Execute();
 }

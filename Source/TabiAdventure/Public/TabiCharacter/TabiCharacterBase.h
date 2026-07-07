@@ -6,9 +6,10 @@
 #include "GenericTeamAgentInterface.h"
 #include "PaperZDCharacter.h"
 #include "TabiData/TabiCharacterTeamId.h"
-
+#include "TabiData/TabiTypes.h"
 #include "TabiCharacterBase.generated.h"
 
+class UPaperZDAnimSequence;
 class UAIPerceptionStimuliSourceComponent;
 class UAIPerceptionComponent;
 class UTabiAnimInstance;
@@ -27,8 +28,9 @@ enum class ETabiCharacterState : uint8
 	Stunned UMETA(DisplayName = "Stunned"),
 	Dead UMETA(DisplayName = "Dead"),
 
-	MAX UMETA(DisplayName = "MAX")
+	MAX UMETA(Hidden)
 };
+
 
 DECLARE_DYNAMIC_DELEGATE(FOnTabiVitalSetSignature);
 
@@ -40,17 +42,24 @@ class TABIADVENTURE_API ATabiCharacterBase : public APaperZDCharacter, public IG
 	GENERATED_BODY()
 
 public:
-	ATabiCharacterBase();
+	ATabiCharacterBase(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
 	virtual void PostInitializeComponents() override;
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
 
-	virtual bool HandleAttackInput();
 	void MoveAlongX(float ScaleX);
-	// FIXME: AttackDefinition should not be null. Delete default value when the entire attack pipeline uses 'AttackDefinition'.
-	// I put the nullptr as default value to push the not buggy code to the git.
-	void ReceiveDamage(const UTabiAttackDefinition* AttackDefinition = nullptr, const AActor* DamageCauser = nullptr);
+
+	//~ Combat
+	virtual FTabiRequestID RequestAttack();
+	/**
+	 * Apply damage to this character.
+	 * @param AttackDefinition Attack skill contenxt.
+	 * @param DamageCauser Who make this attack definition and apply it.
+	 * @return	Whether successfully apply damage.
+	 */
+	bool ReceiveDamage(const UTabiAttackDefinition* AttackDefinition = nullptr, const AActor* DamageCauser = nullptr);
+	//~ End Combat
 
 	//~ Delegates
 	FOnTabiVitalSetSignature OnVitalSet;
@@ -65,7 +74,7 @@ public:
 
 protected:
 	UFUNCTION()
-	virtual void HandleAttackAnimEnd();
+	virtual void HandleAttackAnimEnd(bool IsCompleted);
 
 	UFUNCTION()
 	virtual void HandleDeathAnimEnd();
@@ -79,6 +88,11 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UTabiStatComponent> StatComponent;
 
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UTabiCombatComponent> CombatComponent;
+
+	static FName TabiCombatComponentName;
+
 	//~ Character State
 	UFUNCTION()
 	void HandleSpeedChanged(ETabiStatType StatType, float NewSpeed, float OldSpeed);
@@ -87,30 +101,21 @@ protected:
 	//~ End Character State
 
 	//~ Combat
-	UPROPERTY(EditAnywhere, Category= "Tabi|Combat")
-	TArray<TObjectPtr<UTabiAttackDefinition>> AttackDefinitions;
-
-	UPROPERTY(VisibleAnywhere, Category="Tabi|Combat")
+	UPROPERTY(VisibleAnywhere, Category="Tabi")
 	TObjectPtr<UBoxComponent> Hitbox;
 
-	UPROPERTY(VisibleAnywhere, Category="Tabi|Combat")
+	UPROPERTY(EditAnywhere, Category="Tabi")
 	FVector HitboxBaseOffset;
 
-	UPROPERTY(VisibleAnywhere, Category="Tabi|Combat")
+	UPROPERTY(VisibleAnywhere, Category="Tabi")
 	TObjectPtr<UBoxComponent> Hurtbox;
 
 	UPROPERTY()
 	FTimerHandle HurtEffectTimerHandle;
-
-	UPROPERTY(EditAnywhere, Category="Tabi|Combat")
-	float KnockbackStrength;
-
-	UPROPERTY(EditAnywhere, Category="Tabi|Combat")
-	float KnockbackLiftSpeed;
 	//~ End Combat
 
 	//~ Animation
-	UPROPERTY(VisibleAnywhere, Category="Tabi|Animation")
+	UPROPERTY()
 	TObjectPtr<UTabiAnimInstance> TabiAnimInstance;
 
 	UPROPERTY()
@@ -118,6 +123,9 @@ protected:
 
 	UPROPERTY()
 	FLinearColor DefaultColor;
+
+	UPROPERTY(EditAnywhere, Category="Tabi|Animation")
+	UPaperZDAnimSequence* DeadAnimSequence;
 	//~ End Animation
 
 	// AI Perception
@@ -141,4 +149,5 @@ public:
 	inline bool IsAlive() const;
 
 	UBoxComponent* GetHitbox() const { return Hitbox; }
+	UTabiCombatComponent* GetCombatComponent() const { return CombatComponent;}
 };

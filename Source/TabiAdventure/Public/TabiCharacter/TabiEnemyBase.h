@@ -18,13 +18,13 @@ class TABIADVENTURE_API ATabiEnemyBase : public ATabiCharacterBase
 	GENERATED_BODY()
 
 public:
-	ATabiEnemyBase();
+	ATabiEnemyBase(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 	virtual void PostInitializeComponents() override;
 
-	virtual bool HandleAttackInput() override;
+	virtual FTabiRequestID RequestAttack() override;
 
 protected:
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Transient)
 	TObjectPtr<UTabiAICombatComponent> AICombatComponent;
 
 	UPROPERTY(EditAnywhere, Category="Tabi|AI")
@@ -33,14 +33,12 @@ protected:
 	UPROPERTY(EditAnywhere, Category="Tabi|AI")
 	float PatrolHalfRange;
 
-private:
-
 public:
 	//~ Getter & Setter
 	inline UBehaviorTree* GetBehaviorTree() const { return BehaviorTree; }
 	inline float GetPatrolHalfRange() const { return PatrolHalfRange;}
-	float GetAttackRange() const;
-	float GetMinChaseRadius() const;
-	float GetMaxChaseRadius() const;
+	float GetAttackHalfRadius() const;
+	float GetMinChaseHalfRadius() const;
+	float GetMaxChaseHalfRadius() const;
 	//~ End Getter & Setter
 };
