@@ -43,7 +43,7 @@ void UTabiCombatComponent::SetupHitbox(ATabiCharacterBase* Owner)
 	Hitbox = Owner->GetHitbox();
 	// TODO: Place hitbox in right place based on attack half radius
 	FVector HitboxExtent = Hitbox->GetUnscaledBoxExtent();
-	HitboxExtent.Y = AttackHalfRadius;
+	HitboxExtent.X = AttackHalfRadius;
 	Hitbox->SetBoxExtent(HitboxExtent);
 	Hitbox->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnHitboxBeginOverlap);
 	Hitbox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
