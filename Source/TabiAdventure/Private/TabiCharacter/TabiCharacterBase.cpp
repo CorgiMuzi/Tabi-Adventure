@@ -90,9 +90,7 @@ void ATabiCharacterBase::Tick(float DeltaSeconds)
 
 FTabiRequestID ATabiCharacterBase::RequestAttack()
 {
-	if (CharacterState == ETabiCharacterState::Attacking ||
-		CharacterState == ETabiCharacterState::Jumping ||
-		CharacterState == ETabiCharacterState::Dead) return FTabiRequestID(0);
+	if (!CanAttack()) return FTabiRequestID(0);
 
 	FTabiRequestID AttackRequestID = CombatComponent->TryBeginAttack();
 	if (AttackRequestID.IsValid()) CharacterState = ETabiCharacterState::Attacking;
@@ -119,13 +117,20 @@ bool ATabiCharacterBase::ReceiveDamage(const UTabiAttackDefinition* AttackDefini
 	}
 
 	GetWorld()->GetTimerManager().SetTimer(HurtEffectTimerHandle, FTimerDelegate::CreateLambda(
-		[this]()
-		{
-			if (Flipbook) Flipbook->SetSpriteColor(DefaultColor);
-		}), .1f, false);
+		                                       [this]()
+		                                       {
+			                                       if (Flipbook) Flipbook->SetSpriteColor(DefaultColor);
+		                                       }), .1f, false);
 
 	if (DamageCauser)
 	{
+		CharacterState = ETabiCharacterState::Stunned;
+		GetWorld()->GetTimerManager().SetTimer(StunnedTimerHandle, FTimerDelegate::CreateLambda(
+			                                       [this]()
+			                                       {
+				                                       CharacterState = ETabiCharacterState::Idling;
+			                                       }), AttackDefinition->GetHitStunDuration(), false);
+
 		FVector KnockbackDir = GetActorLocation() - DamageCauser->GetActorLocation();
 		KnockbackDir.Z = 0.f;
 		KnockbackDir.Y = 0.f;
@@ -194,17 +199,6 @@ void ATabiCharacterBase::SetFacingRight(bool bNewFacingRight)
 	OnFacingChanged();
 }
 
-bool ATabiCharacterBase::IsCharacterMovable() const
-{
-	return CharacterState != ETabiCharacterState::Attacking &&
-		CharacterState != ETabiCharacterState::Dead;
-}
-
-bool ATabiCharacterBase::IsAlive() const
-{
-	return CharacterState != ETabiCharacterState::Dead;
-}
-
 void ATabiCharacterBase::OnFacingChanged()
 {
 	FRotator NewRot = GetSprite()->GetRelativeRotation();
@@ -214,4 +208,24 @@ void ATabiCharacterBase::OnFacingChanged()
 	FVector Offset = HitboxBaseOffset;
 	Offset.X = bIsFacingRight ? Offset.X : -Offset.X;
 	Hitbox->SetRelativeLocation(Offset);
+}
+
+bool ATabiCharacterBase::CanMove() const
+{
+	return CharacterState != ETabiCharacterState::Attacking &&
+		CharacterState != ETabiCharacterState::Dead &&
+		CharacterState != ETabiCharacterState::Stunned;
+}
+
+bool ATabiCharacterBase::CanAttack() const
+{
+	return CharacterState != ETabiCharacterState::Attacking &&
+		CharacterState != ETabiCharacterState::Dead &&
+		CharacterState != ETabiCharacterState::Jumping &&
+		CharacterState != ETabiCharacterState::Stunned;
+}
+
+bool ATabiCharacterBase::IsAlive() const
+{
+	return CharacterState != ETabiCharacterState::Dead;
 }

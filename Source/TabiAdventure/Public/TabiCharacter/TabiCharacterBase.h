@@ -60,6 +60,8 @@ public:
 	 * @return	Whether successfully apply damage.
 	 */
 	bool ReceiveDamage(const UTabiAttackDefinition* AttackDefinition = nullptr, const AActor* DamageCauser = nullptr);
+
+	bool CanAttack() const;
 	//~ End Combat
 
 	//~ Delegates
@@ -113,6 +115,9 @@ protected:
 
 	UPROPERTY()
 	FTimerHandle HurtEffectTimerHandle;
+
+	UPROPERTY()
+	FTimerHandle StunnedTimerHandle;
 	//~ End Combat
 
 	//~ Animation
@@ -146,7 +151,7 @@ public:
 	void SetFacingRight(bool bNewFacingRight);
 	FORCEINLINE bool IsFacingRight() const { return bIsFacingRight; }
 	FORCEINLINE ETabiCharacterState GetCharacterState() const { return CharacterState; }
-	bool IsCharacterMovable() const;
+	bool CanMove() const;
 	inline bool IsAlive() const;
 
 	UBoxComponent* GetHitbox() const { return Hitbox; }

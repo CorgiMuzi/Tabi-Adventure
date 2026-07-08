@@ -52,7 +52,6 @@ protected:
 	//~ Player Input
 	void Move(const FInputActionValue& Value);
 
-
 	UPROPERTY(EditDefaultsOnly, Category= "Tabi|Input")
 	TObjectPtr<UInputMappingContext> LocomotionContext;
 
@@ -64,6 +63,8 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category= "Tabi|Input")
 	TObjectPtr<UInputAction> AttackAction;
+
+	bool CanJump() const;
 	//~ End Player Input
 
 	//~ Jump Velocity

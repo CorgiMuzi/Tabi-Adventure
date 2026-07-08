@@ -102,7 +102,7 @@ void ATabiPlayerCharacter::Tick(float DeltaSeconds)
 
 void ATabiPlayerCharacter::Move(const FInputActionValue& Value)
 {
-	if (!IsCharacterMovable()) return;
+	if (!CanMove()) return;
 
 	const float ScaleX = FMath::Clamp(Value.Get<FVector2D>().X, -1.f, 1.f);
 
@@ -111,7 +111,7 @@ void ATabiPlayerCharacter::Move(const FInputActionValue& Value)
 
 void ATabiPlayerCharacter::Jump()
 {
-	if (CharacterState == ETabiCharacterState::Dead || CharacterState == ETabiCharacterState::Attacking) return;
+	if (!CanJump()) return;
 	CharacterState = ETabiCharacterState::Jumping;
 	if (TabiAnimInstance)
 	{
@@ -146,4 +146,11 @@ void ATabiPlayerCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	}
 
 	Super::EndPlay(EndPlayReason);
+}
+
+bool ATabiPlayerCharacter::CanJump() const
+{
+	return CharacterState != ETabiCharacterState::Dead &&
+		CharacterState != ETabiCharacterState::Attacking &&
+		CharacterState != ETabiCharacterState::Stunned;
 }

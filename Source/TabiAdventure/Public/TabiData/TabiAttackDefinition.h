@@ -18,6 +18,7 @@ public:
 	inline float GetDamage() const { return Damage; }
 	inline float GetKnockbackStrength() const { return KnockbackStrength; }
 	inline float GetKnockbackLiftSpeed() const { return KnockbackLiftSpeed; }
+	inline float GetHitStunDuration() const { return HitStunDuration; }
 
 protected:
 	UPROPERTY(EditAnywhere, Category="Tabi|Animation")
@@ -33,4 +34,8 @@ protected:
 	// The initial upward velocity applied to the target.
 	UPROPERTY(EditAnywhere, Category="Tabi|Attack")
 	float KnockbackLiftSpeed;
+
+	// The base value how long the target should be stunned.
+	UPROPERTY(EditAnywhere, Category="Tabi|Attack", meta=(ClampMin="0.1"))
+	float HitStunDuration;
 };
