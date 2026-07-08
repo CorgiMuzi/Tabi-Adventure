@@ -28,14 +28,10 @@ public:
 	virtual void PostInitializeComponents() override;
 	virtual void BeginPlay() override;
 	virtual void PossessedBy(AController* NewController) override;
-	virtual void Tick(float DeltaSeconds) override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
 	//~ ATabiCharacterBase
-	virtual void Jump() override;
-    virtual void Landed(const FHitResult& Hit) override;
-
 	UFUNCTION()
 	virtual void HandleAttackInput();
 	//~ End ATabiCharacterBase
@@ -59,29 +55,8 @@ protected:
 	TObjectPtr<UInputAction> MoveAction;
 
 	UPROPERTY(EditDefaultsOnly, Category= "Tabi|Input")
-	TObjectPtr<UInputAction> JumpAction;
-
-	UPROPERTY(EditDefaultsOnly, Category= "Tabi|Input")
 	TObjectPtr<UInputAction> AttackAction;
-
-	bool CanJump() const;
 	//~ End Player Input
-
-	//~ Jump Velocity
-	float DefaultGravityScale;
-
-	UPROPERTY(EditAnywhere, Category= "Tabi|Input")
-	float AscendingGravityScale;
-
-	UPROPERTY(EditAnywhere, Category= "Tabi|Input")
-	float ApexVelocityThreshold;
-
-	UPROPERTY(EditAnywhere, Category= "Tabi|Input")
-	float ApexGravityScale;
-
-	UPROPERTY(EditAnywhere, Category= "Tabi|Input")
-	float FallingGravityScale;
-	//~ End Jump Velocity
 
 	//~ Combat
 	virtual void HandleAttackAnimEnd(bool IsCompleted) override;

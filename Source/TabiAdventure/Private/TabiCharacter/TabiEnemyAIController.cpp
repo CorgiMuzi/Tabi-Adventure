@@ -133,6 +133,7 @@ void ATabiEnemyAIController::HandleTargetPerceptionUpdated(AActor* Actor, FAISti
 
 	ATabiCharacterBase* Target = Cast<ATabiCharacterBase>(Actor);
 	if (!Target) return;
+
 	UpdateTarget(Target, true);
 }
 
@@ -147,7 +148,7 @@ void ATabiEnemyAIController::UpdateTarget(AActor* Target, bool IsSensed)
 		if (!TargetTeam || FGenericTeamId::GetAttitude(GetGenericTeamId(), TargetTeam->GetGenericTeamId()) != ETeamAttitude::Hostile) return;
 	}
 
-	AActor* LastTarget = Cast<AActor>(BB->GetValueAsObject(TabiEnemyBlackboardKey::Target));
+	ATabiCharacterBase* LastTarget = Cast<ATabiCharacterBase>(BB->GetValueAsObject(TabiEnemyBlackboardKey::Target));
 
 	// If enemy has no target
 	if (!LastTarget && IsSensed)

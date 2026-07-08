@@ -31,15 +31,19 @@ bool UBTDecorator_TabiAttackRange::CalculateRawConditionValue(UBehaviorTreeCompo
 	UBlackboardComponent* BB = OwnerComp.GetBlackboardComponent();
 	if (!BB) return false;
 
+	const AActor* Target = Cast<AActor>(BB->GetValueAsObject(TabiEnemyBlackboardKey::Target));
+
 	float DistanceToTarget = TNumericLimits<float>::Max();
-	if (const AActor* Target = Cast<AActor>(BB->GetValueAsObject(TabiEnemyBlackboardKey::Target)))
+	if (Target)
 	{
 		const float XDiff = Target->GetActorLocation().X - OwnerCharacter->GetActorLocation().X;
 		DistanceToTarget = FMath::Abs(XDiff);
 	}
 
 	const float AttackHalfRadius = OwnerCharacter->GetAttackHalfRadius();
-	return DistanceToTarget <= AttackHalfRadius * 2.f;
+	const bool IsInRange = DistanceToTarget <= AttackHalfRadius * 2.f;
+
+	return IsInRange && OwnerCharacter->IsOnSamePlatformAs(Target);
 }
 
 void UBTDecorator_TabiAttackRange::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds)

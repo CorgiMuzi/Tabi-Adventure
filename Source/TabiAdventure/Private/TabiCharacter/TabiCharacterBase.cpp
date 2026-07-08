@@ -75,6 +75,8 @@ void ATabiCharacterBase::BeginPlay()
 
 	Flipbook = GetSprite();
 	DefaultColor = Flipbook->GetSpriteColor();
+
+	CurrentPlatform = GetCharacterMovement()->CurrentFloor.HitResult.GetActor();
 }
 
 void ATabiCharacterBase::Tick(float DeltaSeconds)
@@ -86,6 +88,61 @@ void ATabiCharacterBase::Tick(float DeltaSeconds)
 		TabiAnimInstance->SetSpeed(FMath::Abs(GetVelocity().X));
 		TabiAnimInstance->SetIsFalling(GetCharacterMovement()->IsFalling());
 	}
+
+	UCharacterMovementComponent* MoveComp = GetCharacterMovement();
+
+	if (MoveComp->MovementMode != MOVE_Falling)
+	{
+		MoveComp->GravityScale = DefaultGravityScale;
+	}
+	else
+	{
+		float VelocityZ = MoveComp->Velocity.Z;
+
+		if (VelocityZ > ApexVelocityThreshold)
+		{
+			// When Character starts jumping.
+			MoveComp->GravityScale = AscendingGravityScale;
+		}
+		else if (VelocityZ < -ApexVelocityThreshold)
+		{
+			// When character falling after jumped.
+			MoveComp->GravityScale = FallingGravityScale;
+		}
+		else
+		{
+			// The highest point of the character when it junped.
+			MoveComp->GravityScale = ApexGravityScale;
+		}
+	}
+}
+
+bool ATabiCharacterBase::CanJumpInternal_Implementation() const
+{
+	return Super::CanJumpInternal_Implementation() &&
+		CurrentState != ETabiCharacterState::Dead &&
+		CurrentState != ETabiCharacterState::Attacking &&
+		CurrentState != ETabiCharacterState::Stunned;
+}
+
+void ATabiCharacterBase::Jump()
+{
+	if (!CanJump()) return;
+	SetCharacterState(ETabiCharacterState::Jumping);
+	if (TabiAnimInstance)
+	{
+		TabiAnimInstance->StopAllAnimationOverrides();
+	}
+
+	Super::Jump();
+}
+
+void ATabiCharacterBase::Landed(const FHitResult& Hit)
+{
+	Super::Landed(Hit);
+
+	SetCharacterState(ETabiCharacterState::Idling);
+	CurrentPlatform = Hit.GetActor();
 }
 
 FTabiRequestID ATabiCharacterBase::RequestAttack()
@@ -93,8 +150,16 @@ FTabiRequestID ATabiCharacterBase::RequestAttack()
 	if (!CanAttack()) return FTabiRequestID(0);
 
 	FTabiRequestID AttackRequestID = CombatComponent->TryBeginAttack();
-	if (AttackRequestID.IsValid()) CharacterState = ETabiCharacterState::Attacking;
+	if (AttackRequestID.IsValid()) SetCharacterState(ETabiCharacterState::Attacking);
 	return AttackRequestID;
+}
+
+bool ATabiCharacterBase::CanAttack() const
+{
+	return CurrentState != ETabiCharacterState::Attacking &&
+		CurrentState != ETabiCharacterState::Dead &&
+		CurrentState != ETabiCharacterState::Jumping &&
+		CurrentState != ETabiCharacterState::Stunned;
 }
 
 void ATabiCharacterBase::StopAttack()
@@ -107,7 +172,7 @@ bool ATabiCharacterBase::ReceiveDamage(const UTabiAttackDefinition* AttackDefini
 	// Return when failed to dealing damage.
 	if (!VitalComponent || !VitalComponent->ReceiveDamage(AttackDefinition->GetDamage())) return false;
 	// Don't play hit reaction animations when character is dead.
-	if (CharacterState == ETabiCharacterState::Dead) return false;
+	if (CurrentState == ETabiCharacterState::Dead) return false;
 
 	StopAttack();
 
@@ -122,15 +187,9 @@ bool ATabiCharacterBase::ReceiveDamage(const UTabiAttackDefinition* AttackDefini
 			                                       if (Flipbook) Flipbook->SetSpriteColor(DefaultColor);
 		                                       }), .1f, false);
 
-	if (DamageCauser)
+	if (DamageCauser && SetCharacterState(ETabiCharacterState::Stunned))
 	{
-		CharacterState = ETabiCharacterState::Stunned;
-		GetWorld()->GetTimerManager().SetTimer(StunnedTimerHandle, FTimerDelegate::CreateLambda(
-			                                       [this]()
-			                                       {
-				                                       CharacterState = ETabiCharacterState::Idling;
-			                                       }), AttackDefinition->GetHitStunDuration(), false);
-
+		StartStunTimer(AttackDefinition->GetHitStunDuration());
 		FVector KnockbackDir = GetActorLocation() - DamageCauser->GetActorLocation();
 		KnockbackDir.Z = 0.f;
 		KnockbackDir.Y = 0.f;
@@ -144,6 +203,20 @@ bool ATabiCharacterBase::ReceiveDamage(const UTabiAttackDefinition* AttackDefini
 	}
 
 	return true;
+}
+
+void ATabiCharacterBase::StartStunTimer(float BaseStunDuration)
+{
+	if (!CombatComponent) return;
+
+	const float FinalStunDuration = BaseStunDuration /*TODO: Needs calculation */;
+	if (FinalStunDuration <= 0.f) return;
+
+	GetWorldTimerManager().SetTimer(StunnedTimerHandle, FTimerDelegate::CreateLambda(
+		                                [this]()
+		                                {
+			                                SetCharacterState(ETabiCharacterState::Idling);
+		                                }), FinalStunDuration, false);
 }
 
 void ATabiCharacterBase::SetTabiTeamId(const ETabiCharacterTeamID& TeamID)
@@ -169,8 +242,8 @@ void ATabiCharacterBase::HandleSpeedChanged(ETabiStatType StatType, float NewSpe
 
 void ATabiCharacterBase::HandleAttackAnimEnd(bool IsCompleted)
 {
-	if (CharacterState != ETabiCharacterState::Attacking) return;
-	CharacterState = ETabiCharacterState::Idling;
+	if (CurrentState != ETabiCharacterState::Attacking) return;
+	SetCharacterState(ETabiCharacterState::Idling);
 }
 
 void ATabiCharacterBase::HandleDeathAnimEnd()
@@ -180,16 +253,8 @@ void ATabiCharacterBase::HandleDeathAnimEnd()
 
 void ATabiCharacterBase::OnCharacterDead()
 {
-	CharacterState = ETabiCharacterState::Dead;
+	SetCharacterState(ETabiCharacterState::Dead);
 	OnTabiCharacterDead.Broadcast();
-	Hurtbox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	GetCharacterMovement()->StopMovementImmediately();
-	GetCharacterMovement()->DisableMovement();
-
-	PerceptionStimuliSource->UnregisterFromPerceptionSystem();
-
-	if (!TabiAnimInstance) return;
-	TabiAnimInstance->PlayDeadAnimation(DeadAnimSequence);
 }
 
 void ATabiCharacterBase::SetFacingRight(bool bNewFacingRight)
@@ -197,6 +262,45 @@ void ATabiCharacterBase::SetFacingRight(bool bNewFacingRight)
 	if (bIsFacingRight == bNewFacingRight) return;
 	bIsFacingRight = bNewFacingRight;
 	OnFacingChanged();
+}
+
+bool ATabiCharacterBase::SetCharacterState(ETabiCharacterState NewState)
+{
+	if (CurrentState == ETabiCharacterState::Dead) return false;
+	if (CurrentState == NewState) return false;
+
+	const ETabiCharacterState OldState = CurrentState;
+	CurrentState = NewState;
+
+	OnCharacterStateChanged(OldState, NewState);
+
+	return true;
+}
+
+void ATabiCharacterBase::OnCharacterStateChanged(ETabiCharacterState OldState, ETabiCharacterState NewState)
+{
+	switch (OldState)
+	{
+		case ETabiCharacterState::Attacking:
+			if (Hitbox) Hitbox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			break;
+
+		default: break;
+	}
+
+	switch (NewState)
+	{
+		case ETabiCharacterState::Dead:
+			if (Hurtbox) Hurtbox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			GetCharacterMovement()->StopMovementImmediately();
+			GetCharacterMovement()->DisableMovement();
+
+			PerceptionStimuliSource->UnregisterFromPerceptionSystem();
+
+			if (TabiAnimInstance) TabiAnimInstance->PlayDeadAnimation(DeadAnimSequence);
+
+		default: break;
+	}
 }
 
 void ATabiCharacterBase::OnFacingChanged()
@@ -212,20 +316,35 @@ void ATabiCharacterBase::OnFacingChanged()
 
 bool ATabiCharacterBase::CanMove() const
 {
-	return CharacterState != ETabiCharacterState::Attacking &&
-		CharacterState != ETabiCharacterState::Dead &&
-		CharacterState != ETabiCharacterState::Stunned;
-}
-
-bool ATabiCharacterBase::CanAttack() const
-{
-	return CharacterState != ETabiCharacterState::Attacking &&
-		CharacterState != ETabiCharacterState::Dead &&
-		CharacterState != ETabiCharacterState::Jumping &&
-		CharacterState != ETabiCharacterState::Stunned;
+	return CurrentState != ETabiCharacterState::Attacking &&
+		CurrentState != ETabiCharacterState::Dead &&
+		CurrentState != ETabiCharacterState::Stunned;
 }
 
 bool ATabiCharacterBase::IsAlive() const
 {
-	return CharacterState != ETabiCharacterState::Dead;
+	return CurrentState != ETabiCharacterState::Dead;
+}
+
+const AActor* ATabiCharacterBase::GetCurrentPlatform() const
+{
+	const FFindFloorResult& Floor = GetCharacterMovement()->CurrentFloor;
+	// When character is walking on valid platform
+	if (Floor.IsWalkableFloor())
+	{
+		return Floor.HitResult.GetActor();
+	}
+
+	// Return cached platform when character is jumping/falling or on invalid platform
+	return CurrentPlatform;
+}
+
+bool ATabiCharacterBase::IsOnSamePlatformAs(const AActor* OtherActor) const
+{
+	const ATabiCharacterBase* OtherCharacter = Cast<ATabiCharacterBase>(OtherActor);
+	if (OtherCharacter == nullptr) return false;
+
+	const AActor* MyPlatform = GetCurrentPlatform();
+	const AActor* OtherPlatform = OtherCharacter->GetCurrentPlatform();
+	return MyPlatform && MyPlatform == OtherPlatform;
 }
