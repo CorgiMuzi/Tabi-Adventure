@@ -26,6 +26,7 @@ enum class ETabiCharacterState : uint8
 	Idling UMETA(DisplayName = "Idling"),
 	Jumping UMETA(DisplayName = "Jumping"),
 	Attacking UMETA(DisplayName = "Attacking"),
+	Dodging UMETA(DisplayName = "Dodging"),
 	Stunned UMETA(DisplayName = "Stunned"),
 	Dead UMETA(DisplayName = "Dead"),
 
@@ -49,7 +50,6 @@ public:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
 
-	bool CanJumpInternal_Implementation() const;
 	virtual void Jump() override;
 	virtual void Landed(const FHitResult& Hit) override;
 	void MoveAlongX(float ScaleX);
@@ -74,7 +74,8 @@ public:
 	bool ReceiveDamage(const UTabiAttackDefinition* AttackDefinition = nullptr, const AActor* DamageCauser = nullptr);
 
 	UBoxComponent* GetHitbox() const { return Hitbox; }
-	UTabiCombatComponent* GetCombatComponent() const { return CombatComponent;}
+	UBoxComponent* GetHurtbox() const { return Hurtbox; }
+	UTabiCombatComponent* GetCombatComponent() const { return CombatComponent; }
 	//~ End Combat
 
 	//~ Delegates
@@ -90,6 +91,12 @@ public:
 	bool IsOnSamePlatformAs(const AActor* OtherActor) const;
 	//~ End AI Perception
 
+	/**
+	 *
+	 * @return Half sizes of the character ( X: width, Y: height )
+	 */
+	FVector GetCharacterHalfSize() const;
+	void FaceToward(const AActor* Target);
 	void SetFacingRight(bool bNewFacingRight);
 	FORCEINLINE bool IsFacingRight() const { return bIsFacingRight; }
 
@@ -114,12 +121,9 @@ protected:
 
 	static FName TabiCombatComponentName;
 
-	//~ Player Input
-	UPROPERTY(EditDefaultsOnly, Category= "Tabi|Input")
-	TObjectPtr<UInputAction> JumpAction;
-	//~ End Player Input
-
 	//~ Jump
+	virtual bool CanJumpInternal_Implementation() const override;
+
 	float DefaultGravityScale;
 
 	UPROPERTY(EditAnywhere, Category= "Tabi|Input")
@@ -135,6 +139,44 @@ protected:
 	float FallingGravityScale;
 	//~ End Jump
 
+	//~ Dodge
+	UFUNCTION()
+	virtual void Dodge();
+
+	void ExecuteDodge();
+	void ExecuteAirDodge();
+	void EndAirDodge();
+	void EndDodge(float GroundFriction, float BrakingDecelerationWalking);
+	bool CanDodge() const;
+
+	UPROPERTY()
+	float DodgeDirection;
+
+	UPROPERTY(EditAnywhere, Category="Tabi|Dodge")
+	float DodgeSpeed = 500.f;
+
+	/**
+	 * The ratio of speed reduction when trying to dodge in air.
+	 */
+	UPROPERTY(EditAnywhere, Category="Tabi|Dodge", meta=(ClampMin=0, ClampMax=1))
+	float AirDodgeSpeedScaler = 0.9f;
+
+	UPROPERTY(EditAnywhere, Category="Tabi|Dodge")
+	float DodgeDuration = 1.f;
+
+	UPROPERTY(EditAnywhere, Category="Tabi|Dodge")
+	float DodgeRecoveryTime = 0.3f;
+
+	UPROPERTY()
+	FTimerHandle DodgeExecutionTimerHandle;
+
+	UPROPERTY()
+	FTimerHandle DodgeInvulnerableTimerHandle;
+
+	UPROPERTY()
+	FTimerHandle DodgeRecoveryTimerHandle;
+	//~ End Dodge
+
 	//~ Character State
 	void OnCharacterStateChanged(ETabiCharacterState OldState, ETabiCharacterState NewState);
 
@@ -148,16 +190,13 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category="Tabi")
 	TObjectPtr<UBoxComponent> Hitbox;
 
-	UPROPERTY(EditAnywhere, Category="Tabi")
-	FVector HitboxBaseOffset;
-
 	UPROPERTY(VisibleAnywhere, Category="Tabi")
 	TObjectPtr<UBoxComponent> Hurtbox;
 
 	UPROPERTY()
 	FTimerHandle HurtEffectTimerHandle;
 
-	void StartStunTimer(float BaseStunDuration);
+	void StartStunTimer(float BaseStunDuration, bool ShouldApplyStat = true);
 
 	UPROPERTY()
 	FTimerHandle StunnedTimerHandle;
@@ -191,4 +230,6 @@ private:
 	void OnFacingChanged();
 
 	bool bIsFacingRight = true;
+	bool bNeedRecoverToDodge = false;
+	bool bIsAirDodging = false;
 };

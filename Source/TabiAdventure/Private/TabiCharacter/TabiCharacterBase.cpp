@@ -29,6 +29,7 @@ ATabiCharacterBase::ATabiCharacterBase(const FObjectInitializer& ObjectInitializ
 
 	UCharacterMovementComponent* MovementComp = GetCharacterMovement();
 	MovementComp->bConstrainToPlane = true;
+	MovementComp->SetPlaneConstraintOrigin(FVector::ZeroVector);
 	MovementComp->bSnapToPlaneAtStart = true;
 	MovementComp->bOrientRotationToMovement = false;
 
@@ -58,14 +59,16 @@ void ATabiCharacterBase::PostInitializeComponents()
 	Super::PostInitializeComponents();
 
 	if (VitalComponent) VitalComponent->FillVitalValues();
-	if (StatComponent) StatComponent->FillStatValues();
+	if (StatComponent)
+	{
+		StatComponent->FillStatValues();
+		HandleSpeedChanged(ETabiStatType::Speed, StatComponent->GetStatCurrentValue(ETabiStatType::Speed), 0.f /*Dummy Value*/);
+	}
 }
 
 void ATabiCharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
-
-	HitboxBaseOffset = FVector(Hitbox->GetRelativeLocation().X, 0.f, 0.f);
 
 	TabiAnimInstance = CastChecked<UTabiAnimInstance>(GetAnimInstance());
 	TabiAnimInstance->OnAttackAnimEnd.AddDynamic(this, &ThisClass::HandleAttackAnimEnd);
@@ -91,7 +94,11 @@ void ATabiCharacterBase::Tick(float DeltaSeconds)
 
 	UCharacterMovementComponent* MoveComp = GetCharacterMovement();
 
-	if (MoveComp->MovementMode != MOVE_Falling)
+	if (CurrentState == ETabiCharacterState::Dodging)
+	{
+		MoveComp->Velocity.X = DodgeDirection * DodgeSpeed;
+	}
+	else if (!MoveComp->IsFalling())
 	{
 		MoveComp->GravityScale = DefaultGravityScale;
 	}
@@ -141,6 +148,7 @@ void ATabiCharacterBase::Landed(const FHitResult& Hit)
 {
 	Super::Landed(Hit);
 
+	if (bIsAirDodging) bIsAirDodging = false;
 	SetCharacterState(ETabiCharacterState::Idling);
 	CurrentPlatform = Hit.GetActor();
 }
@@ -159,6 +167,7 @@ bool ATabiCharacterBase::CanAttack() const
 	return CurrentState != ETabiCharacterState::Attacking &&
 		CurrentState != ETabiCharacterState::Dead &&
 		CurrentState != ETabiCharacterState::Jumping &&
+		CurrentState != ETabiCharacterState::Dodging &&
 		CurrentState != ETabiCharacterState::Stunned;
 }
 
@@ -205,11 +214,95 @@ bool ATabiCharacterBase::ReceiveDamage(const UTabiAttackDefinition* AttackDefini
 	return true;
 }
 
-void ATabiCharacterBase::StartStunTimer(float BaseStunDuration)
+bool ATabiCharacterBase::CanDodge() const
+{
+	return CanMove() && !bNeedRecoverToDodge;
+}
+
+void ATabiCharacterBase::Dodge()
+{
+	if (!CanDodge()) return;
+
+	bNeedRecoverToDodge = true;
+
+	GetWorldTimerManager().SetTimer(DodgeExecutionTimerHandle, [this]()
+	{
+		SetCharacterState(ETabiCharacterState::Dodging);
+		DodgeDirection = IsFacingRight() ? 1.f : -1.f;
+		// Character will be invunerable after 10% of DodgeDuration times.
+		GetCharacterMovement()->IsFalling() ? ExecuteAirDodge() : ExecuteDodge();
+	}, DodgeDuration * 0.1f, false);
+}
+
+void ATabiCharacterBase::ExecuteDodge()
+{
+	float GroundFriction = GetCharacterMovement()->GroundFriction;
+	GetCharacterMovement()->GroundFriction = 0.f;
+
+	float BrakingDecelerationWalking = GetCharacterMovement()->BrakingDecelerationWalking;
+	GetCharacterMovement()->BrakingDecelerationWalking = 0.f;
+
+	GetWorldTimerManager().SetTimer(DodgeInvulnerableTimerHandle, [this, GroundFriction, BrakingDecelerationWalking]()
+	{
+		EndDodge(GroundFriction, BrakingDecelerationWalking);
+	}, DodgeDuration, false);
+}
+
+void ATabiCharacterBase::ExecuteAirDodge()
+{
+	if (bIsAirDodging) return;
+	bIsAirDodging = true;
+	UCharacterMovementComponent* MoveComp = GetCharacterMovement();
+	MoveComp->GravityScale = 0.f;
+	MoveComp->Velocity.Z = 0.f;
+	GetWorldTimerManager().SetTimer(DodgeInvulnerableTimerHandle, [this]()
+	{
+		EndAirDodge();
+	}, DodgeDuration, false);
+}
+
+void ATabiCharacterBase::EndAirDodge()
+{
+	UCharacterMovementComponent* MoveComp = GetCharacterMovement();
+
+	SetCharacterState(ETabiCharacterState::Jumping);
+	MoveComp->GravityScale = DefaultGravityScale;
+	MoveComp->MaxWalkSpeed = StatComponent->GetStatCurrentValue(ETabiStatType::Speed);
+
+	GetWorldTimerManager().SetTimer(DodgeRecoveryTimerHandle, [this]()
+	{
+		bNeedRecoverToDodge = false;
+	}, DodgeRecoveryTime, false);
+}
+
+void ATabiCharacterBase::EndDodge(const float GroundFriction, const float BrakingDecelerationWalking)
+{
+	UCharacterMovementComponent* MoveComp = GetCharacterMovement();
+
+	SetCharacterState(ETabiCharacterState::Idling);
+
+	MoveComp->GroundFriction = GroundFriction;
+	MoveComp->BrakingDecelerationWalking = BrakingDecelerationWalking;
+	MoveComp->MaxWalkSpeed = StatComponent->GetStatCurrentValue(ETabiStatType::Speed);
+
+	GetWorldTimerManager().SetTimer(DodgeRecoveryTimerHandle, [this]()
+	{
+		bNeedRecoverToDodge = false;
+	}, DodgeRecoveryTime, false);
+}
+
+void ATabiCharacterBase::StartStunTimer(float BaseStunDuration, bool ShouldApplyStat /*true*/)
 {
 	if (!CombatComponent) return;
 
-	const float FinalStunDuration = BaseStunDuration /*TODO: Needs calculation */;
+	const float FinalStunDuration = BaseStunDuration;
+	if (ShouldApplyStat)
+	{
+		/**
+		 * Calculate final stun duration when stat should be applied.
+		 */
+	}
+
 	if (FinalStunDuration <= 0.f) return;
 
 	GetWorldTimerManager().SetTimer(StunnedTimerHandle, FTimerDelegate::CreateLambda(
@@ -257,6 +350,17 @@ void ATabiCharacterBase::OnCharacterDead()
 	OnTabiCharacterDead.Broadcast();
 }
 
+void ATabiCharacterBase::FaceToward(const AActor* Target)
+{
+	if (!Target) return;
+
+	const float XDiff = Target->GetActorLocation().X - GetActorLocation().X;
+	if (FMath::IsNearlyZero(XDiff)) return;
+
+	SetFacingRight(XDiff > 0.f);
+}
+
+
 void ATabiCharacterBase::SetFacingRight(bool bNewFacingRight)
 {
 	if (bIsFacingRight == bNewFacingRight) return;
@@ -264,12 +368,35 @@ void ATabiCharacterBase::SetFacingRight(bool bNewFacingRight)
 	OnFacingChanged();
 }
 
+void ATabiCharacterBase::OnFacingChanged()
+{
+	// FVector NewScale = GetSprite()->GetRelativeScale3D();
+	// NewScale.X = bIsFacingRight ? FMath::Abs(NewScale.X) : -FMath::Abs(NewScale.X);
+	// GetSprite()->SetRelativeScale3D(NewScale);
+
+	FRotator NewRot = GetSprite()->GetRelativeRotation();
+	NewRot.Yaw = bIsFacingRight ? 0.f : 180.f;
+	GetSprite()->SetRelativeRotation(NewRot);
+
+	if (Hitbox)
+	{
+		FVector Offset = CombatComponent ? CombatComponent->GetHitboxBaseOffset() : GetCharacterHalfSize();
+		Offset.X = bIsFacingRight ? Offset.X : -Offset.X;
+		Hitbox->SetRelativeLocation(Offset);
+	}
+}
+
 bool ATabiCharacterBase::SetCharacterState(ETabiCharacterState NewState)
 {
-	if (CurrentState == ETabiCharacterState::Dead) return false;
-	if (CurrentState == NewState) return false;
-
 	const ETabiCharacterState OldState = CurrentState;
+	if (OldState == ETabiCharacterState::Dead) return false;
+	if (OldState == NewState) return false;
+
+	if (OldState == ETabiCharacterState::Stunned)
+	{
+		if (NewState != ETabiCharacterState::Dead && NewState != ETabiCharacterState::Idling) return false;
+	}
+
 	CurrentState = NewState;
 
 	OnCharacterStateChanged(OldState, NewState);
@@ -285,6 +412,10 @@ void ATabiCharacterBase::OnCharacterStateChanged(ETabiCharacterState OldState, E
 			if (Hitbox) Hitbox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 			break;
 
+		case ETabiCharacterState::Dodging:
+			if (VitalComponent) VitalComponent->SetVulnerability(true);
+			break;
+
 		default: break;
 	}
 
@@ -298,26 +429,21 @@ void ATabiCharacterBase::OnCharacterStateChanged(ETabiCharacterState OldState, E
 			PerceptionStimuliSource->UnregisterFromPerceptionSystem();
 
 			if (TabiAnimInstance) TabiAnimInstance->PlayDeadAnimation(DeadAnimSequence);
+			break;
+
+		case ETabiCharacterState::Dodging:
+			if (VitalComponent) VitalComponent->SetVulnerability(false);
+			break;
 
 		default: break;
 	}
-}
-
-void ATabiCharacterBase::OnFacingChanged()
-{
-	FRotator NewRot = GetSprite()->GetRelativeRotation();
-	NewRot.Yaw = bIsFacingRight ? 0.f : 180.f;
-	GetSprite()->SetRelativeRotation(NewRot);
-
-	FVector Offset = HitboxBaseOffset;
-	Offset.X = bIsFacingRight ? Offset.X : -Offset.X;
-	Hitbox->SetRelativeLocation(Offset);
 }
 
 bool ATabiCharacterBase::CanMove() const
 {
 	return CurrentState != ETabiCharacterState::Attacking &&
 		CurrentState != ETabiCharacterState::Dead &&
+		CurrentState != ETabiCharacterState::Dodging &&
 		CurrentState != ETabiCharacterState::Stunned;
 }
 
@@ -347,4 +473,13 @@ bool ATabiCharacterBase::IsOnSamePlatformAs(const AActor* OtherActor) const
 	const AActor* MyPlatform = GetCurrentPlatform();
 	const AActor* OtherPlatform = OtherCharacter->GetCurrentPlatform();
 	return MyPlatform && MyPlatform == OtherPlatform;
+}
+
+FVector ATabiCharacterBase::GetCharacterHalfSize() const
+{
+	const float HalfWidth = Hurtbox ? Hurtbox->GetUnscaledBoxExtent().X : GetCapsuleComponent()->GetUnscaledCapsuleRadius();
+	const float HalfHeight = Hurtbox ? Hurtbox->GetUnscaledBoxExtent().Y : GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight();
+	const float HalfDepth = Hurtbox ? Hurtbox->GetUnscaledBoxExtent().Z : GetCapsuleComponent()->GetUnscaledCapsuleRadius();
+
+	return FVector{HalfWidth, HalfHeight, HalfDepth};
 }

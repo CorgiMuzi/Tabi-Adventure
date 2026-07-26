@@ -41,7 +41,8 @@ public:
 	UFUNCTION()
 	virtual void DisableHitCollision();
 
-	inline float GetAttackHalfRadius() const { return AttackHalfRadius; }
+	inline float GetAttackRadius() const { return AttackRadius; }
+	inline FVector GetHitboxBaseOffset() const { return HitboxBaseOffset; }
 
 	inline static uint32 GetNextRequestID() { return NextRequestID++;}
 	inline FTabiRequestID GetCurrentRequestID() const { return CurrentRequestID; }
@@ -62,13 +63,16 @@ protected:
 
 	UPROPERTY()
 	TObjectPtr<UBoxComponent> Hitbox;
+
+	UPROPERTY()
+	FVector HitboxBaseOffset;
 	//~ End Hitbox
 
 	UPROPERTY()
 	TArray<TObjectPtr<AActor>> AlreadyHitCharacters;
 
 	UPROPERTY(EditAnywhere, meta=(ClampMin="0"))
-	float AttackHalfRadius = 20.f;
+	float AttackRadius = 20.f;
 
 	/**
 	 * Select which attack definition should character use when it handles attack.

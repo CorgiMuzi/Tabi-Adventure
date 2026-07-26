@@ -41,10 +41,14 @@ void UTabiCombatComponent::PostEditChangeProperty(struct FPropertyChangedEvent& 
 void UTabiCombatComponent::SetupHitbox(ATabiCharacterBase* Owner)
 {
 	Hitbox = Owner->GetHitbox();
-	// TODO: Place hitbox in right place based on attack half radius
-	FVector HitboxExtent = Hitbox->GetUnscaledBoxExtent();
-	HitboxExtent.X = AttackHalfRadius;
+	if (!Hitbox) return;
+
+	FVector HitboxExtent{Owner->GetCharacterHalfSize()};
+	HitboxExtent.X += AttackRadius / 2.f;
 	Hitbox->SetBoxExtent(HitboxExtent);
+
+	HitboxBaseOffset = FVector(AttackRadius / 2.f, 0.f, 0.f);
+
 	Hitbox->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnHitboxBeginOverlap);
 	Hitbox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }

@@ -42,7 +42,11 @@ desktop.ini
 *.pdb
 
 # Assets
-Assets/
+Content/Assets/
+Content/Fab/
 
 # Game design related
 Docs/
+
+# Daily work plans (per-date progress tracking, local only)
+Plans/

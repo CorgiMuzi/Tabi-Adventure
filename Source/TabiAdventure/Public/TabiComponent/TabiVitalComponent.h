@@ -64,8 +64,11 @@ protected:
 private:
 	void InitVitals();
 
+	bool bIsVulnerable = true;
+
 public:
-	bool IsInVulnerable() const;
+	void SetVulnerability(bool IsVulnerable);
+	bool IsVulnerable() const;
 
 	float GetCurrentValueByType(ETabiVitalType VitalType) const { return Vitals[VitalType].CurrentValue; }
 	float GetCurrentMaxByType(ETabiVitalType VitalType) const { return Vitals[VitalType].CurrentMax; }

@@ -44,6 +44,7 @@ void ATabiPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 
 	EnhancedInput->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ThisClass::Move);
 	EnhancedInput->BindAction(JumpAction, ETriggerEvent::Started, this, &ThisClass::Jump);
+	EnhancedInput->BindAction(DodgeAction, ETriggerEvent::Started, this, &ThisClass::Dodge);
 	EnhancedInput->BindAction(AttackAction, ETriggerEvent::Triggered, this, &ThisClass::HandleAttackInput);
 }
 

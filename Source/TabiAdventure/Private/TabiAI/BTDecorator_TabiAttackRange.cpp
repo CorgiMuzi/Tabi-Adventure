@@ -40,8 +40,16 @@ bool UBTDecorator_TabiAttackRange::CalculateRawConditionValue(UBehaviorTreeCompo
 		DistanceToTarget = FMath::Abs(XDiff);
 	}
 
-	const float AttackHalfRadius = OwnerCharacter->GetAttackHalfRadius();
-	const bool IsInRange = DistanceToTarget <= AttackHalfRadius * 2.f;
+	const float AttackRadius = OwnerCharacter->GetAttackRadius();
+	/********************************************************
+	 *	CharSizeX : CharacterHalfSize().X
+	 *
+	 * <--                     Hit Box                    -->
+	 * <--          Hurt Box          -->
+	 * <-- CharSizeX --><-- CharSizeX --><-- AttackRadius -->
+	 *                  <--          Is In Range          -->
+	 *******************************************************/
+	const bool IsInRange = DistanceToTarget <= OwnerCharacter->GetCharacterHalfSize().X + AttackRadius;
 
 	return IsInRange && OwnerCharacter->IsOnSamePlatformAs(Target);
 }

@@ -55,6 +55,11 @@ public:
 	FOnStatChanged OnStatBaseValueChanged;
 	//~ End Stat Delegates
 
+	void SetStatCurrentValue(ETabiStatType StatType, float NewValue);
+	void SetStatBaseValue(ETabiStatType StatType, float NewValue);
+	float GetStatCurrentValue(ETabiStatType StatType);
+	float GetStatBaseValue(ETabiStatType StatType);
+	TMap<ETabiStatType, FTabiStat> GetAllStats() const;
 protected:
 	UPROPERTY(EditDefaultsOnly, Category="Tabi|Stat")
 	TMap<ETabiStatType, FTabiStat> Stats;
@@ -65,9 +70,4 @@ protected:
 private:
 	void InitStats();
 
-public:
-	void SetStatCurrentValue(ETabiStatType StatType, float NewValue);
-	void SetStatBaseValue(ETabiStatType StatType, float NewValue);
-	float GetStatCurrentValue(ETabiStatType StatType);
-	float GetStatBaseValue(ETabiStatType StatType);
 };

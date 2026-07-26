@@ -70,3 +70,8 @@ float UTabiStatComponent::GetStatBaseValue(ETabiStatType StatType)
 	return Stats[StatType].BaseValue;
 }
 
+TMap<ETabiStatType, FTabiStat> UTabiStatComponent::GetAllStats() const
+{
+	return Stats;
+}
+

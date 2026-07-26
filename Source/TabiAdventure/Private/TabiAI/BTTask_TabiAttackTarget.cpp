@@ -7,6 +7,8 @@
 #include "AIController.h"
 #include "TabiCharacter/TabiCharacterBase.h"
 #include "TabiAI/TabiAIMessages.h"
+#include "TabiGameFramework/TabiEnemyBlackboardKeys.h"
+#include "BehaviorTree/BlackboardComponent.h"
 
 UBTTask_TabiAttackTarget::UBTTask_TabiAttackTarget()
 {
@@ -22,6 +24,14 @@ EBTNodeResult::Type UBTTask_TabiAttackTarget::ExecuteTask(UBehaviorTreeComponent
 
 	ATabiCharacterBase* OwnerCharacter = MyController->GetPawn<ATabiCharacterBase>();
 	if (!OwnerCharacter) return EBTNodeResult::Failed;
+
+	UBlackboardComponent* BB = OwnerComp.GetBlackboardComponent();
+	if (!BB) return EBTNodeResult::Failed;
+
+	if (const AActor* Target = Cast<AActor>(BB->GetValueAsObject(TabiEnemyBlackboardKey::Target)))
+	{
+		OwnerCharacter->FaceToward(Target);
+	}
 
 	const FTabiRequestID AttackRequestID = OwnerCharacter->RequestAttack();
 	if (!AttackRequestID.IsValid()) return EBTNodeResult::Failed;

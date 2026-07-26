@@ -28,9 +28,9 @@ FTabiRequestID ATabiEnemyBase::RequestAttack()
 	return Super::RequestAttack();
 }
 
-float ATabiEnemyBase::GetAttackHalfRadius() const
+float ATabiEnemyBase::GetAttackRadius() const
 {
-	return AICombatComponent ? AICombatComponent->GetAttackHalfRadius() : 0.f;
+	return AICombatComponent ? AICombatComponent->GetAttackRadius() : 0.f;
 }
 
 float ATabiEnemyBase::GetMinChaseHalfRadius() const

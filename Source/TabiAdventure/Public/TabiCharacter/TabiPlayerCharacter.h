@@ -55,6 +55,12 @@ protected:
 	TObjectPtr<UInputAction> MoveAction;
 
 	UPROPERTY(EditDefaultsOnly, Category= "Tabi|Input")
+	TObjectPtr<UInputAction> JumpAction;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Tabi|Input")
+	TObjectPtr<UInputAction> DodgeAction;
+
+	UPROPERTY(EditDefaultsOnly, Category= "Tabi|Input")
 	TObjectPtr<UInputAction> AttackAction;
 	//~ End Player Input
 
@@ -66,6 +72,4 @@ private:
 	//~ Combat
 	int32 AttackComboStack = 0;
 	//~ End Combat
-
-public:
 };

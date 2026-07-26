@@ -37,7 +37,7 @@ public:
 	//~ Getter & Setter
 	inline UBehaviorTree* GetBehaviorTree() const { return BehaviorTree; }
 	inline float GetPatrolHalfRange() const { return PatrolHalfRange;}
-	float GetAttackHalfRadius() const;
+	float GetAttackRadius() const;
 	float GetMinChaseHalfRadius() const;
 	float GetMaxChaseHalfRadius() const;
 	//~ End Getter & Setter
