@@ -6,13 +6,22 @@
 #include "GameFramework/PlayerController.h"
 #include "TabiPlayerController.generated.h"
 
-class UAIPerceptionStimuliSourceComponent;
+class UTabiPlayerHUD;
 
 UCLASS()
 class TABIADVENTURE_API ATabiPlayerController : public APlayerController
 {
 	GENERATED_BODY()
 public:
-	ATabiPlayerController();
+	void CreatePlayerHUD();
 
+	UPROPERTY(EditDefaultsOnly, Category="Tabi|UI")
+	TSubclassOf<UTabiPlayerHUD> PlayerHUDClass;
+
+	UPROPERTY()
+	TObjectPtr<UTabiPlayerHUD> CurrentHUD;
+
+protected:
+	virtual void OnPossess(APawn* InPawn) override;
+	virtual void OnUnPossess() override;
 };

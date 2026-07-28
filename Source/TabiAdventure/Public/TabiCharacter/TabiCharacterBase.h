@@ -61,6 +61,10 @@ public:
 	inline bool IsAlive() const;
 	//~ End Character State
 
+	//~ Vital
+	UTabiVitalComponent* GetVitalComponent() const { return VitalComponent;}
+	//~ End Vital
+
 	//~ Combat
 	bool CanAttack() const;
 	virtual FTabiRequestID RequestAttack();

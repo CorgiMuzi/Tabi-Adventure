@@ -5,7 +5,10 @@
 
 #include "TabiComponent/TabiAICombatComponent.h"
 
+#include "TabiWidget/TabiHealthBar.h"
+
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Components/WidgetComponent.h"
 
 ATabiEnemyBase::ATabiEnemyBase(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer.SetDefaultSubobjectClass<UTabiAICombatComponent>(Super::TabiCombatComponentName))
 {
@@ -13,6 +16,12 @@ ATabiEnemyBase::ATabiEnemyBase(const FObjectInitializer& ObjectInitializer) : Su
 	MovementComp->SetPlaneConstraintOrigin(FVector(0.f, 0.f, 0.f));
 
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+
+	HealthBarWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthBarWidget"));
+	HealthBarWidgetComponent->SetupAttachment(RootComponent);
+	HealthBarWidgetComponent->SetWidgetSpace(EWidgetSpace::World);
+	HealthBarWidgetComponent->SetRelativeLocation(FVector::UpVector * 10.f);
+	HealthBarWidgetComponent->SetRelativeRotation(FRotator(0.f, 90.f, 0.f));
 }
 
 void ATabiEnemyBase::PostInitializeComponents()
@@ -23,9 +32,24 @@ void ATabiEnemyBase::PostInitializeComponents()
 	AICombatComponent = Cast<UTabiAICombatComponent>(CombatComponent);
 }
 
+void ATabiEnemyBase::BeginPlay()
+{
+	Super::BeginPlay();
+
+	InitHealthBar();
+}
+
 FTabiRequestID ATabiEnemyBase::RequestAttack()
 {
 	return Super::RequestAttack();
+}
+
+void ATabiEnemyBase::InitHealthBar()
+{
+	if (!HealthBarWidgetComponent) return;
+	UTabiHealthBar* HealthBar = Cast<UTabiHealthBar>(HealthBarWidgetComponent->GetUserWidgetObject());
+	if (!HealthBar) return;
+	HealthBar->SetOwningVital(GetVitalComponent());
 }
 
 float ATabiEnemyBase::GetAttackRadius() const

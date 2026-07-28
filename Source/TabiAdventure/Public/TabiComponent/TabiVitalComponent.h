@@ -38,6 +38,7 @@ struct FTabiVital
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnTabiVitalDepletedSignature);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnTabiVitalChangedSignature, ETabiVitalType, VitalType, float, CurrentValue, float, CurrentMax);
 
 UCLASS(ClassGroup=(Tabi), meta=(BlueprintSpawnableComponent))
 class TABIADVENTURE_API UTabiVitalComponent : public UActorComponent
@@ -54,6 +55,7 @@ public:
 	bool ReceiveHeal(float Heal);
 
 	FOnTabiVitalDepletedSignature OnTabiHPDepleted;
+	FOnTabiVitalChangedSignature OnTabiVitalChanged;
 
 protected:
 	void OnCharacterDead();
@@ -63,6 +65,7 @@ protected:
 
 private:
 	void InitVitals();
+	void BroadcastVitalChanged(ETabiVitalType VitalType) const;
 
 	bool bIsVulnerable = true;
 

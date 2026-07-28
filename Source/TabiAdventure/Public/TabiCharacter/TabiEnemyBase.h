@@ -8,9 +8,11 @@
 
 class UTabiAICombatComponent;
 class ATabiEnemyAIController;
-class UBehaviorTree;
 class UTabiAttackDefinition;
+
+class UBehaviorTree;
 class UAIPerceptionComponent;
+class UWidgetComponent;
 
 UCLASS()
 class TABIADVENTURE_API ATabiEnemyBase : public ATabiCharacterBase
@@ -20,6 +22,7 @@ class TABIADVENTURE_API ATabiEnemyBase : public ATabiCharacterBase
 public:
 	ATabiEnemyBase(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 	virtual void PostInitializeComponents() override;
+	virtual void BeginPlay() override;
 
 	virtual FTabiRequestID RequestAttack() override;
 
@@ -32,6 +35,13 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category="Tabi|AI")
 	float PatrolHalfRange;
+
+	//~ Vital
+	void InitHealthBar();
+
+	UPROPERTY(VisibleAnywhere, Category="Tabi|UI")
+	TObjectPtr<UWidgetComponent> HealthBarWidgetComponent;
+	//~ End Vital
 
 public:
 	//~ Getter & Setter
