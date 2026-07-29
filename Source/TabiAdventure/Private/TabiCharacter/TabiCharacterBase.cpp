@@ -18,6 +18,7 @@
 #include "PaperFlipbookComponent.h"
 #include "Perception/AIPerceptionStimuliSourceComponent.h"
 #include "Perception/AISense_Sight.h"
+#include "TabiSubsystem/TabiDepthSortSubsystem.h"
 
 FName ATabiCharacterBase::TabiCombatComponentName(TEXT("TabiCombatComponent"));
 
@@ -80,6 +81,27 @@ void ATabiCharacterBase::BeginPlay()
 	DefaultColor = Flipbook->GetSpriteColor();
 
 	CurrentPlatform = GetCharacterMovement()->CurrentFloor.HitResult.GetActor();
+
+	if (UWorld* CurrentWorld = GetWorld())
+	{
+		if (auto* DepthSortSS = CurrentWorld->GetSubsystem<UTabiDepthSortSubsystem>())
+		{
+			DepthSortSS->RegisterActor(this);
+		}
+	}
+}
+
+void ATabiCharacterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	if (UWorld* CurrentWorld = GetWorld())
+	{
+		if (auto* DepthSortSS = CurrentWorld->GetSubsystem<UTabiDepthSortSubsystem>())
+		{
+			DepthSortSS->UnregisterActor(this);
+		}
+	}
+
+	Super::EndPlay(EndPlayReason);
 }
 
 void ATabiCharacterBase::Tick(float DeltaSeconds)

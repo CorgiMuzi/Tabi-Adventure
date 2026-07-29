@@ -24,9 +24,6 @@ ATabiPlayerCharacter::ATabiPlayerCharacter(const FObjectInitializer& ObjectIniti
 
 	Camera = CreateDefaultSubobject<UCameraComponent>(FName("Camera"));
 	Camera->SetupAttachment(SpringArm);
-
-	UCharacterMovementComponent* MovementComp = GetCharacterMovement();
-	MovementComp->SetPlaneConstraintOrigin(FVector(0.f, 5.f, 0.f));
 }
 
 void ATabiPlayerCharacter::PostInitializeComponents()

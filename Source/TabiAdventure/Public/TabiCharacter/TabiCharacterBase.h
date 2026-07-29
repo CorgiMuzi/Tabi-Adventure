@@ -48,6 +48,7 @@ public:
 
 	virtual void PostInitializeComponents() override;
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void Tick(float DeltaSeconds) override;
 
 	virtual void Jump() override;
@@ -87,10 +88,15 @@ public:
 	FOnTabiCharacterDeadSignature OnTabiCharacterDead;
 	//~ End Delegates
 
-	//~ AI Perception
+	//~ IGenericTeamAgentInterface
 	virtual void SetTabiTeamId(const ETabiCharacterTeamID& TeamID);
 	virtual void SetGenericTeamId(const FGenericTeamId& TeamID) override { TabiTeamId = TeamID; }
 	virtual FGenericTeamId GetGenericTeamId() const override { return TabiTeamId; }
+
+	bool IsPlayerTeam() const { return GetGenericTeamId() == FGenericTeamId(static_cast<uint8>(ETabiCharacterTeamID::Player)); }
+	//~ End IGenericTeamAgentInterface
+
+	//~ AI Perception
 	const AActor* GetCurrentPlatform() const;
 	bool IsOnSamePlatformAs(const AActor* OtherActor) const;
 	//~ End AI Perception

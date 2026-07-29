@@ -7,20 +7,16 @@
 
 #include "TabiWidget/TabiHealthBar.h"
 
-#include "GameFramework/CharacterMovementComponent.h"
 #include "Components/WidgetComponent.h"
 
 ATabiEnemyBase::ATabiEnemyBase(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer.SetDefaultSubobjectClass<UTabiAICombatComponent>(Super::TabiCombatComponentName))
 {
-	UCharacterMovementComponent* MovementComp = GetCharacterMovement();
-	MovementComp->SetPlaneConstraintOrigin(FVector(0.f, 0.f, 0.f));
-
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 
 	HealthBarWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthBarWidget"));
 	HealthBarWidgetComponent->SetupAttachment(RootComponent);
 	HealthBarWidgetComponent->SetWidgetSpace(EWidgetSpace::World);
-	HealthBarWidgetComponent->SetRelativeLocation(FVector::UpVector * 10.f);
+	HealthBarWidgetComponent->SetRelativeLocation(FVector::UpVector * 50.f);
 	HealthBarWidgetComponent->SetRelativeRotation(FRotator(0.f, 90.f, 0.f));
 }
 
