@@ -209,7 +209,7 @@ bool ATabiCharacterBase::ReceiveDamage(const UTabiAttackDefinition* AttackDefini
 
 	if (Flipbook)
 	{
-		Flipbook->SetSpriteColor(FLinearColor(1.f, 0.3f, 0.3f));
+		Flipbook->SetSpriteColor(FLinearColor::White);
 	}
 
 	GetWorld()->GetTimerManager().SetTimer(HurtEffectTimerHandle, FTimerDelegate::CreateLambda(

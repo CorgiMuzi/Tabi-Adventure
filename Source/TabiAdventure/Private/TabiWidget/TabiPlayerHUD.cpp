@@ -2,8 +2,7 @@
 
 
 #include "TabiWidget/TabiPlayerHUD.h"
-#include "TabiComponent/TabiVitalComponent.h"
-#include "TabiWidget/TabiHealthBar.h"
+#include "TabiWidget/TabiVitalBar.h"
 
 void UTabiPlayerHUD::SetOwningVital(UTabiVitalComponent* InVital)
 {

@@ -38,7 +38,7 @@ struct FTabiVital
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnTabiVitalDepletedSignature);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnTabiVitalChangedSignature, ETabiVitalType, VitalType, float, CurrentValue, float, CurrentMax);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnTabiVitalChangedSignature, const ETabiVitalType&, InVitalType, const float, CurrentValue, const float, CurrentMax);
 
 UCLASS(ClassGroup=(Tabi), meta=(BlueprintSpawnableComponent))
 class TABIADVENTURE_API UTabiVitalComponent : public UActorComponent

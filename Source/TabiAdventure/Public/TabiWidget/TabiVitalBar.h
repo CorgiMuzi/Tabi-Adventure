@@ -5,12 +5,10 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "TabiComponent/TabiVitalComponent.h"
-#include "TabiHealthBar.generated.h"
-
-class UProgressBar;
+#include "TabiVitalBar.generated.h"
 
 UCLASS()
-class TABIADVENTURE_API UTabiHealthBar : public UUserWidget
+class TABIADVENTURE_API UTabiVitalBar : public UUserWidget
 {
 	GENERATED_BODY()
 
@@ -18,17 +16,19 @@ public:
 	void SetOwningVital(UTabiVitalComponent* InVital);
 
 	UPROPERTY(meta=(BindWidget))
-	TObjectPtr<UProgressBar> ProgressBar_Health;
+	TObjectPtr<class UProgressBar> ProgressBar_Vital;
 
 protected:
 	virtual void NativeDestruct() override;
 
 	UFUNCTION()
-	void HandleHealthChanged(ETabiVitalType VitalType, float CurrentValue, float CurrentMax);
+	void HandleVitalChanged(const ETabiVitalType& InVitalType, const float CurrentValue, const float CurrentMax);
 
-	void UpdateHealthPercent(float HealthPercent);
+	void UpdateVitalPercent(float VitalPercent);
 
-private:
 	UPROPERTY()
 	TWeakObjectPtr<UTabiVitalComponent> OwningVital;
+
+	UPROPERTY(EditDefaultsOnly, Category="Tabi|UI|Vital")
+	ETabiVitalType VitalType;
 };

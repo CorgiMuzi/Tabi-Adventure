@@ -7,7 +7,7 @@
 #include "TabiPlayerHUD.generated.h"
 
 class UTabiVitalComponent;
-class UTabiHealthBar;
+class UTabiVitalBar;
 
 UCLASS()
 class TABIADVENTURE_API UTabiPlayerHUD : public UUserWidget
@@ -19,5 +19,5 @@ public:
 
 protected:
 	UPROPERTY(meta=(BindWidget))
-	TObjectPtr<UTabiHealthBar> HealthBar;
+	TObjectPtr<UTabiVitalBar> HealthBar;
 };

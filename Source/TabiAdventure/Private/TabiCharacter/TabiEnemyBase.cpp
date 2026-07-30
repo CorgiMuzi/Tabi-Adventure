@@ -5,7 +5,7 @@
 
 #include "TabiComponent/TabiAICombatComponent.h"
 
-#include "TabiWidget/TabiHealthBar.h"
+#include "TabiWidget/TabiVitalBar.h"
 
 #include "Components/WidgetComponent.h"
 
@@ -43,7 +43,7 @@ FTabiRequestID ATabiEnemyBase::RequestAttack()
 void ATabiEnemyBase::InitHealthBar()
 {
 	if (!HealthBarWidgetComponent) return;
-	UTabiHealthBar* HealthBar = Cast<UTabiHealthBar>(HealthBarWidgetComponent->GetUserWidgetObject());
+	UTabiVitalBar* HealthBar = Cast<UTabiVitalBar>(HealthBarWidgetComponent->GetUserWidgetObject());
 	if (!HealthBar) return;
 	HealthBar->SetOwningVital(GetVitalComponent());
 }
