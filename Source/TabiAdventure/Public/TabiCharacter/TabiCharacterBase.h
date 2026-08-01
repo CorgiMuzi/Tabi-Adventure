@@ -215,13 +215,8 @@ protected:
 	UPROPERTY(EditAnywhere, Category="Tabi|Dodge")
 	float DodgeStaminaUsage = 30.f;
 
-	UPROPERTY()
 	FTimerHandle DodgeExecutionTimerHandle;
-
-	UPROPERTY()
 	FTimerHandle DodgeInvulnerableTimerHandle;
-
-	UPROPERTY()
 	FTimerHandle DodgeRecoveryTimerHandle;
 	//~ End Dodge
 
@@ -235,18 +230,15 @@ protected:
 	//~ End Character State
 
 	//~ Combat
+	void StartStunTimer(float BaseStunDuration, bool ShouldApplyStat = true);
+
 	UPROPERTY(VisibleAnywhere, Category="Tabi")
 	TObjectPtr<UBoxComponent> Hitbox;
 
 	UPROPERTY(VisibleAnywhere, Category="Tabi")
 	TObjectPtr<UBoxComponent> Hurtbox;
 
-	UPROPERTY()
 	FTimerHandle HurtEffectTimerHandle;
-
-	void StartStunTimer(float BaseStunDuration, bool ShouldApplyStat = true);
-
-	UPROPERTY()
 	FTimerHandle StunnedTimerHandle;
 	//~ End Combat
 
@@ -262,6 +254,13 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category="Tabi|Animation")
 	UPaperZDAnimSequence* DeadAnimSequence;
+
+	UPROPERTY(EditDefaultsOnly, Category="Tabi|Animation")
+	float DeathFallbackTime;
+
+	bool bDeathHandled{false};
+
+	FTimerHandle DeathFallbackTimerHandle;
 	//~ End Animation
 
 	// AI Perception

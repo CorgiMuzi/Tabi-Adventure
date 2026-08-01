@@ -244,7 +244,7 @@ bool ATabiCharacterBase::ReceiveDamage(const UTabiAttackDefinition* AttackDefini
 bool ATabiCharacterBase::CanDodge() const
 {
 	return CanMove() && !bNeedRecoverToDodge
-	&& (VitalComponent->GetCurrentValueByType(ETabiVitalType::Stamina) >= DodgeStaminaUsage);
+		&& (VitalComponent->GetCurrentValueByType(ETabiVitalType::Stamina) >= DodgeStaminaUsage);
 }
 
 void ATabiCharacterBase::Dodge()
@@ -370,6 +370,9 @@ void ATabiCharacterBase::HandleAttackAnimEnd(bool IsCompleted)
 
 void ATabiCharacterBase::HandleDeathAnimEnd()
 {
+	if (bDeathHandled) return;
+	bDeathHandled = true;
+	GetWorldTimerManager().ClearTimer(DeathFallbackTimerHandle);
 	Destroy();
 }
 
@@ -458,7 +461,15 @@ void ATabiCharacterBase::OnCharacterStateChanged(ETabiCharacterState OldState, E
 
 			PerceptionStimuliSource->UnregisterFromPerceptionSystem();
 
-			if (TabiAnimInstance) TabiAnimInstance->PlayDeadAnimation(DeadAnimSequence);
+			if (TabiAnimInstance)
+			{
+				const float FallbackTime = DeadAnimSequence ? DeadAnimSequence->GetTotalDuration() + DeathFallbackTime : DeathFallbackTime;
+				TabiAnimInstance->PlayDeadAnimation(DeadAnimSequence);
+
+				GetWorldTimerManager().SetTimer(DeathFallbackTimerHandle, this, &ThisClass::HandleDeathAnimEnd, FallbackTime, false);
+			}
+
+			SetActorTickEnabled(false);
 			break;
 
 		case ETabiCharacterState::Dodging:
