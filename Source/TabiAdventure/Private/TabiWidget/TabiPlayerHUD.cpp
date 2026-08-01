@@ -7,4 +7,5 @@
 void UTabiPlayerHUD::SetOwningVital(UTabiVitalComponent* InVital)
 {
 	if (HealthBar) HealthBar->SetOwningVital(InVital);
+	if (StaminaBar) StaminaBar->SetOwningVital(InVital);
 }

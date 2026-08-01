@@ -20,4 +20,7 @@ public:
 protected:
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<UTabiVitalBar> HealthBar;
+
+	UPROPERTY(meta=(BindWidget))
+	TObjectPtr<UTabiVitalBar> StaminaBar;
 };

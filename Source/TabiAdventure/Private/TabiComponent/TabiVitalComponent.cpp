@@ -10,6 +10,11 @@ UTabiVitalComponent::UTabiVitalComponent()
 	InitVitals();
 }
 
+void UTabiVitalComponent::BeginPlay()
+{
+	Super::BeginPlay();
+}
+
 void UTabiVitalComponent::InitVitals()
 {
 	for (uint8 i = 0; i < static_cast<uint8>(ETabiVitalType::MAX); ++i)
@@ -25,11 +30,6 @@ void UTabiVitalComponent::InitVitals()
 	}
 }
 
-void UTabiVitalComponent::BeginPlay()
-{
-	Super::BeginPlay();
-}
-
 void UTabiVitalComponent::FillVitalValues()
 {
 	for (auto& Vital : Vitals)
@@ -39,47 +39,56 @@ void UTabiVitalComponent::FillVitalValues()
 	}
 }
 
-void UTabiVitalComponent::BroadcastVitalChanged(ETabiVitalType VitalType) const
+void UTabiVitalComponent::SetCurrentBaseValue(const ETabiVitalType& VitalType, const float InBaseValue)
+{
+	if (!Vitals.Contains(VitalType)) return;
+
+	const float NewBaseValue = FMath::Clamp(InBaseValue, 0.f, Vitals[VitalType].BaseMax);
+	Vitals[VitalType].BaseValue = NewBaseValue;
+	Vitals[VitalType].CurrentValue = NewBaseValue;
+}
+
+void UTabiVitalComponent::SetCurrentBaseMax(const ETabiVitalType& VitalType, const float InBaseMax)
+{
+	if (!Vitals.Contains(VitalType)) return;
+	Vitals[VitalType].BaseMax = InBaseMax;
+	Vitals[VitalType].BaseValue = FMath::Clamp(Vitals[VitalType].BaseValue, 0.f, Vitals[VitalType].BaseMax);
+
+	Vitals[VitalType].CurrentMax = FMath::Clamp(Vitals[VitalType].CurrentMax, 0.f, Vitals[VitalType].BaseMax);
+	Vitals[VitalType].CurrentValue = FMath::Clamp(Vitals[VitalType].CurrentValue, 0.f, Vitals[VitalType].CurrentMax);
+}
+
+bool UTabiVitalComponent::ModifyCurrentValue(const ETabiVitalType& VitalType, const float Amount)
+{
+	if (!Vitals.Contains(VitalType)) return false;
+
+	const float NewCurrentValue = Vitals[VitalType].CurrentValue + Amount;
+	Vitals[VitalType].CurrentValue = FMath::Clamp(NewCurrentValue, 0.f, Vitals[VitalType].CurrentMax);
+	BroadcastVitalChanged(VitalType);
+	if (Vitals[VitalType].CurrentValue <= 0.f) { BroadcastVitalDepleted(VitalType); }
+	return true;
+}
+
+bool UTabiVitalComponent::ModifyCurrentMax(const ETabiVitalType& VitalType, const float Amount)
+{
+	if (!Vitals.Contains(VitalType)) return false;
+
+	Vitals[VitalType].CurrentMax += Amount;
+	Vitals[VitalType].CurrentValue = FMath::Clamp(Vitals[VitalType].CurrentValue, 0.f, Vitals[VitalType].CurrentMax);
+	BroadcastVitalChanged(VitalType);
+	return true;
+}
+
+void UTabiVitalComponent::BroadcastVitalChanged(const ETabiVitalType& VitalType) const
 {
 	if (!Vitals.Contains(VitalType)) return;
 	const FTabiVital& Vital = Vitals[VitalType];
-	OnTabiVitalChanged.Broadcast(VitalType, Vital.CurrentValue, Vital.CurrentMax);
+	OnTabiCurrentVitalChanged.Broadcast(VitalType, Vital.CurrentValue, Vital.CurrentMax);
 }
 
-bool UTabiVitalComponent::ReceiveDamage(float Damage)
+void UTabiVitalComponent::BroadcastVitalDepleted(const ETabiVitalType& VitalType) const
 {
-	if (!Vitals.Contains(ETabiVitalType::HP)) return false;
+	if (!Vitals.Contains(VitalType)) return;
 
-	if (!bIsVulnerable) return false;
-	const float NewHP = Vitals[ETabiVitalType::HP].CurrentValue - Damage;
-	Vitals[ETabiVitalType::HP].CurrentValue = FMath::Clamp(NewHP,0.f, Vitals[ETabiVitalType::HP].CurrentMax);
-
-	BroadcastVitalChanged(ETabiVitalType::HP);
-	if (FMath::IsNearlyZero(Vitals[ETabiVitalType::HP].CurrentValue)) OnCharacterDead();
-	return true;
-}
-
-bool UTabiVitalComponent::ReceiveHeal(float Heal)
-{
-	if (!Vitals.Contains(ETabiVitalType::HP)) return false;
-	const float NewHP = Vitals[ETabiVitalType::HP].CurrentValue + Heal;
-	Vitals[ETabiVitalType::HP].CurrentValue = FMath::Clamp(NewHP, 0.f, Vitals[ETabiVitalType::HP].CurrentMax);
-	BroadcastVitalChanged(ETabiVitalType::HP);
-
-	return true;
-}
-
-void UTabiVitalComponent::OnCharacterDead()
-{
-	OnTabiHPDepleted.Broadcast();
-}
-
-void UTabiVitalComponent::SetVulnerability(bool IsVulnerable)
-{
-	bIsVulnerable = IsVulnerable;
-}
-
-bool UTabiVitalComponent::IsVulnerable() const
-{
-	return bIsVulnerable;
+	OnTabiVitalDepleted.Broadcast(VitalType);
 }

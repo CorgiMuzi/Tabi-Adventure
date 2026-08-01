@@ -37,8 +37,9 @@ struct FTabiVital
 	FTabiVital(float InitValue, float InitMax) : BaseValue{InitValue} , BaseMax{InitMax}, CurrentValue{InitValue}, CurrentMax{InitMax} {}
 };
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnTabiVitalDepletedSignature);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnTabiVitalChangedSignature, const ETabiVitalType&, InVitalType, const float, CurrentValue, const float, CurrentMax);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTabiVitalDepletedSignature, const ETabiVitalType&, InVitalType);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnTabiCurrentVitalChangedSignature, const ETabiVitalType&, InVitalType, const float, CurrentValue, const float, CurrentMax);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnTabiBaseVitalChangedSignature, const ETabiVitalType&, InVitalType, const float, BaseValue, const float, BaseMax);
 
 UCLASS(ClassGroup=(Tabi), meta=(BlueprintSpawnableComponent))
 class TABIADVENTURE_API UTabiVitalComponent : public UActorComponent
@@ -51,28 +52,25 @@ public:
 	virtual void BeginPlay() override;
 	void FillVitalValues();
 
-	bool ReceiveDamage(float Damage);
-	bool ReceiveHeal(float Heal);
+	void SetCurrentBaseValue(const ETabiVitalType& VitalType, const float InBaseValue);
+	void SetCurrentBaseMax(const ETabiVitalType& VitalType, const float InBaseMax);
+	bool ModifyCurrentValue(const ETabiVitalType& VitalType, const float Amount);
+	bool ModifyCurrentMax(const ETabiVitalType& VitalType, const float Amount);
 
-	FOnTabiVitalDepletedSignature OnTabiHPDepleted;
-	FOnTabiVitalChangedSignature OnTabiVitalChanged;
+	FOnTabiVitalDepletedSignature OnTabiVitalDepleted;
+	FOnTabiCurrentVitalChangedSignature OnTabiCurrentVitalChanged;
+	FOnTabiBaseVitalChangedSignature OnTabiBaseVitalChanged;
 
 protected:
-	void OnCharacterDead();
-
 	UPROPERTY(EditDefaultsOnly, Category="Tabi|Vital")
 	TMap<ETabiVitalType, FTabiVital> Vitals;
 
 private:
 	void InitVitals();
-	void BroadcastVitalChanged(ETabiVitalType VitalType) const;
-
-	bool bIsVulnerable = true;
+	void BroadcastVitalChanged(const ETabiVitalType& VitalType) const;
+	void BroadcastVitalDepleted(const ETabiVitalType& VitalType) const;
 
 public:
-	void SetVulnerability(bool IsVulnerable);
-	bool IsVulnerable() const;
-
 	float GetCurrentValueByType(ETabiVitalType VitalType) const { return Vitals[VitalType].CurrentValue; }
 	float GetCurrentMaxByType(ETabiVitalType VitalType) const { return Vitals[VitalType].CurrentMax; }
 };

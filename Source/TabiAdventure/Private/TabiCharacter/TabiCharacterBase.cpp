@@ -47,7 +47,7 @@ ATabiCharacterBase::ATabiCharacterBase(const FObjectInitializer& ObjectInitializ
 	Hurtbox->SetupAttachment(GetCapsuleComponent());
 
 	VitalComponent = CreateDefaultSubobject<UTabiVitalComponent>(TEXT("VitalComponent"));
-	VitalComponent->OnTabiHPDepleted.AddDynamic(this, &ThisClass::OnCharacterDead);
+	VitalComponent->OnTabiVitalDepleted.AddDynamic(this, &ThisClass::OnCharacterDead);
 	StatComponent = CreateDefaultSubobject<UTabiStatComponent>(TEXT("StatComponent"));
 	CombatComponent = CreateDefaultSubobject<UTabiCombatComponent>(TabiCombatComponentName);
 
@@ -113,6 +113,9 @@ void ATabiCharacterBase::Tick(float DeltaSeconds)
 		TabiAnimInstance->SetSpeed(FMath::Abs(GetVelocity().X));
 		TabiAnimInstance->SetIsFalling(GetCharacterMovement()->IsFalling());
 	}
+
+	// Recover stamina as 1 per seconds.
+	TickStaminaRegen(DeltaSeconds);
 
 	UCharacterMovementComponent* MoveComp = GetCharacterMovement();
 
@@ -200,8 +203,10 @@ void ATabiCharacterBase::StopAttack()
 
 bool ATabiCharacterBase::ReceiveDamage(const UTabiAttackDefinition* AttackDefinition, const AActor* DamageCauser)
 {
+	// Return false when the character is not vulnerable
+	if (!CombatComponent->IsVulnerable()) return false;
 	// Return when failed to dealing damage.
-	if (!VitalComponent || !VitalComponent->ReceiveDamage(AttackDefinition->GetDamage())) return false;
+	if (!VitalComponent->ModifyCurrentValue(ETabiVitalType::HP, -AttackDefinition->GetDamage())) return false;
 	// Don't play hit reaction animations when character is dead.
 	if (CurrentState == ETabiCharacterState::Dead) return false;
 
@@ -238,7 +243,8 @@ bool ATabiCharacterBase::ReceiveDamage(const UTabiAttackDefinition* AttackDefini
 
 bool ATabiCharacterBase::CanDodge() const
 {
-	return CanMove() && !bNeedRecoverToDodge;
+	return CanMove() && !bNeedRecoverToDodge
+	&& (VitalComponent->GetCurrentValueByType(ETabiVitalType::Stamina) >= DodgeStaminaUsage);
 }
 
 void ATabiCharacterBase::Dodge()
@@ -246,6 +252,7 @@ void ATabiCharacterBase::Dodge()
 	if (!CanDodge()) return;
 
 	bNeedRecoverToDodge = true;
+	ConsumeStamina(DodgeStaminaUsage);
 
 	GetWorldTimerManager().SetTimer(DodgeExecutionTimerHandle, [this]()
 	{
@@ -366,8 +373,9 @@ void ATabiCharacterBase::HandleDeathAnimEnd()
 	Destroy();
 }
 
-void ATabiCharacterBase::OnCharacterDead()
+void ATabiCharacterBase::OnCharacterDead(const ETabiVitalType& InVitalType)
 {
+	if (InVitalType != ETabiVitalType::HP) return;
 	SetCharacterState(ETabiCharacterState::Dead);
 	OnTabiCharacterDead.Broadcast();
 }
@@ -435,7 +443,7 @@ void ATabiCharacterBase::OnCharacterStateChanged(ETabiCharacterState OldState, E
 			break;
 
 		case ETabiCharacterState::Dodging:
-			if (VitalComponent) VitalComponent->SetVulnerability(true);
+			CombatComponent->SetVulnerability(false);
 			break;
 
 		default: break;
@@ -454,7 +462,7 @@ void ATabiCharacterBase::OnCharacterStateChanged(ETabiCharacterState OldState, E
 			break;
 
 		case ETabiCharacterState::Dodging:
-			if (VitalComponent) VitalComponent->SetVulnerability(false);
+			CombatComponent->SetVulnerability(true);
 			break;
 
 		default: break;
@@ -472,6 +480,25 @@ bool ATabiCharacterBase::CanMove() const
 bool ATabiCharacterBase::IsAlive() const
 {
 	return CurrentState != ETabiCharacterState::Dead;
+}
+
+void ATabiCharacterBase::TickStaminaRegen(const float DeltaTime)
+{
+	if (!VitalComponent || StaminaRegenRate <= 0.f) return;
+
+	if (GetWorld()->GetTimeSeconds() < StaminaRegenResumeTime) return;
+
+	VitalComponent->ModifyCurrentValue(ETabiVitalType::Stamina, DeltaTime * StaminaRegenRate);
+}
+
+bool ATabiCharacterBase::ConsumeStamina(const float Cost)
+{
+	if (!VitalComponent) return false;
+
+	const bool bConsumed = VitalComponent->ModifyCurrentValue(ETabiVitalType::Stamina, -FMath::Abs(Cost));
+
+	if (bConsumed) StaminaRegenResumeTime = GetWorld()->GetTimeSeconds() + StaminaRegenDelay;
+	return bConsumed;
 }
 
 const AActor* ATabiCharacterBase::GetCurrentPlatform() const

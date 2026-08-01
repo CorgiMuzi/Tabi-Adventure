@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GenericTeamAgentInterface.h"
 #include "PaperZDCharacter.h"
+#include "TabiComponent/TabiVitalComponent.h"
 #include "TabiData/TabiCharacterTeamId.h"
 #include "TabiData/TabiTypes.h"
 #include "TabiCharacterBase.generated.h"
@@ -118,7 +119,7 @@ protected:
 	virtual void HandleDeathAnimEnd();
 
 	UFUNCTION()
-	virtual void OnCharacterDead();
+	virtual void OnCharacterDead(const ETabiVitalType& InVitalType);
 
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UTabiVitalComponent> VitalComponent;
@@ -149,6 +150,40 @@ protected:
 	float FallingGravityScale;
 	//~ End Jump
 
+	//~ Stamina
+	/**
+	 * Increase the stamina as Amount
+	 * !! Never decreased even passed the negative value as the amount. !!
+	 * @param DeltaTime How much stamina would be recovered.
+	 */
+	void TickStaminaRegen(const float DeltaTime);
+
+	/**
+	 *
+	 * @param Cost How much the stamina used.
+	 * @return Whether is successfully consume the stamina
+	 */
+	bool ConsumeStamina(const float Cost);
+
+	/**
+	 * When the stamina regeneration would be start
+	 */
+	UPROPERTY(EditDefaultsOnly, Category="Tabi|Stamina")
+	float StaminaRegenResumeTime;
+
+	/**
+	 * How long the stamina regen would be delayed after consuming it.
+	 */
+	UPROPERTY(EditDefaultsOnly, Category="Tabi|Stamina")
+	float StaminaRegenDelay = 0.1f;
+
+	/**
+	 * How much the stamina regen per seconds.
+	 */
+	UPROPERTY(EditDefaultsOnly, Category="Tabi|Stamina")
+	float StaminaRegenRate = 1.f;
+	//~ End Stamina
+
 	//~ Dodge
 	UFUNCTION()
 	virtual void Dodge();
@@ -176,6 +211,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category="Tabi|Dodge")
 	float DodgeRecoveryTime = 0.3f;
+
+	UPROPERTY(EditAnywhere, Category="Tabi|Dodge")
+	float DodgeStaminaUsage = 30.f;
 
 	UPROPERTY()
 	FTimerHandle DodgeExecutionTimerHandle;

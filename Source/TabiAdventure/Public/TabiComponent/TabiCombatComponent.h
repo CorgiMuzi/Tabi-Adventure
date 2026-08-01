@@ -41,6 +41,9 @@ public:
 	UFUNCTION()
 	virtual void DisableHitCollision();
 
+	void SetVulnerability(const bool InVulnerability) { bIsVulnerable = InVulnerability;}
+	bool IsVulnerable() const { return bIsVulnerable; }
+
 	inline float GetAttackRadius() const { return AttackRadius; }
 	inline FVector GetHitboxBaseOffset() const { return HitboxBaseOffset; }
 
@@ -66,6 +69,9 @@ protected:
 
 	UPROPERTY()
 	FVector HitboxBaseOffset;
+
+	UPROPERTY()
+	bool bIsVulnerable{true};
 	//~ End Hitbox
 
 	UPROPERTY()

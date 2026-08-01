@@ -10,11 +10,11 @@ void UTabiVitalBar::SetOwningVital(UTabiVitalComponent* InVital)
 
 	if (OwningVital.IsValid())
 	{
-		OwningVital->OnTabiVitalChanged.RemoveDynamic(this, &ThisClass::HandleVitalChanged);
+		OwningVital->OnTabiCurrentVitalChanged.RemoveDynamic(this, &ThisClass::HandleVitalChanged);
 	}
 
 	OwningVital = InVital;
-	OwningVital->OnTabiVitalChanged.AddDynamic(this, &ThisClass::HandleVitalChanged);
+	OwningVital->OnTabiCurrentVitalChanged.AddDynamic(this, &ThisClass::HandleVitalChanged);
 
 	const float CurrentValue = OwningVital->GetCurrentValueByType(VitalType);
 	const float CurrentMax = OwningVital->GetCurrentMaxByType(VitalType);
@@ -41,7 +41,7 @@ void UTabiVitalBar::NativeDestruct()
 {
 	if (OwningVital.IsValid())
 	{
-		OwningVital->OnTabiVitalChanged.RemoveDynamic(this, &ThisClass::HandleVitalChanged);
+		OwningVital->OnTabiCurrentVitalChanged.RemoveDynamic(this, &ThisClass::HandleVitalChanged);
 	}
 
 	Super::NativeDestruct();
