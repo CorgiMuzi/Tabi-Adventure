@@ -5,7 +5,7 @@
 
 #include "BrainComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
-#include "TabiGameFramework/TabiEnemyBlackboardKeys.h"
+#include "TabiConstant/TabiEnemyBlackboardKeys.h"
 #include "TabiCharacter/TabiEnemyBase.h"
 #include "TabiComponent/TabiCombatComponent.h"
 #include "TabiAI/TabiAIMessages.h"

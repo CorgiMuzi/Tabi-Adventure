@@ -1,14 +1,21 @@
 ﻿// Copyright (c) 2026 CorgiMuzi. All Rights Reserved.
 
 #include "TabiCharacter/TabiPlayerController.h"
+
 #include "TabiCharacter/TabiPlayerCharacter.h"
 #include "TabiWidget/TabiPlayerHUD.h"
+#include "TabiGameMode/TabiAdventureGameModeBase.h"
 
 void ATabiPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 
 	CreatePlayerHUD();
+
+	if (ATabiPlayerCharacter* PlayerCharacter = Cast<ATabiPlayerCharacter>(InPawn))
+	{
+		PlayerCharacter->OnTabiCharacterDead.AddDynamic(this, &ThisClass::HandleCharacterDead);
+	}
 }
 
 void ATabiPlayerController::OnUnPossess()
@@ -19,7 +26,20 @@ void ATabiPlayerController::OnUnPossess()
 		CurrentHUD = nullptr;
 	}
 
+	if (ATabiPlayerCharacter* PlayerCharacter = GetPawn<ATabiPlayerCharacter>())
+	{
+		PlayerCharacter->OnTabiCharacterDead.RemoveDynamic(this, &ThisClass::HandleCharacterDead);
+	}
+
 	Super::OnUnPossess();
+}
+
+void ATabiPlayerController::HandleCharacterDead()
+{
+	if (ATabiAdventureGameModeBase* GameMode = GetWorld()->GetAuthGameMode<ATabiAdventureGameModeBase>())
+	{
+		GameMode->OnPlayerDied();
+	}
 }
 
 void ATabiPlayerController::CreatePlayerHUD()

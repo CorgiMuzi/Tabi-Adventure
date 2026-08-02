@@ -7,7 +7,7 @@
 #include "AIController.h"
 #include "TabiCharacter/TabiCharacterBase.h"
 #include "TabiAI/TabiAIMessages.h"
-#include "TabiGameFramework/TabiEnemyBlackboardKeys.h"
+#include "TabiConstant/TabiEnemyBlackboardKeys.h"
 #include "BehaviorTree/BlackboardComponent.h"
 
 UBTTask_TabiAttackTarget::UBTTask_TabiAttackTarget()

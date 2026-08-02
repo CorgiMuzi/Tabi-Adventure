@@ -5,7 +5,7 @@
 #include "BehaviorTree/BlackboardComponent.h"
 #include "TabiCharacter/TabiEnemyBase.h"
 #include "AIController.h"
-#include "TabiGameFramework/TabiEnemyBlackboardKeys.h"
+#include "TabiConstant/TabiEnemyBlackboardKeys.h"
 
 UBTDecorator_TabiAttackRange::UBTDecorator_TabiAttackRange()
 {
