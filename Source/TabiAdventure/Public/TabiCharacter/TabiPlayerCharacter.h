@@ -36,6 +36,10 @@ public:
 	virtual void HandleAttackInput();
 	//~ End ATabiCharacterBase
 
+	//~ Enhanced Input
+	void SetGameplayInputEnabled(bool bIsEnabled);
+	//~ End Enhanced Input
+
 protected:
 	//~ Camera
 	UPROPERTY(EditDefaultsOnly, Category= "Tabi|Camera")

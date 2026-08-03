@@ -78,6 +78,24 @@ void ATabiPlayerCharacter::HandleAttackInput()
 	RequestAttack();
 }
 
+void ATabiPlayerCharacter::SetGameplayInputEnabled(const bool bIsEnabled)
+{
+	APlayerController* PC = GetController<APlayerController>();
+	if (!PC) return;
+
+	if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
+	{
+		if (bIsEnabled)
+		{
+			Subsystem->AddMappingContext(LocomotionContext, 0);
+		}
+		else
+		{
+			Subsystem->RemoveMappingContext(LocomotionContext);
+		}
+	}
+}
+
 void ATabiPlayerCharacter::HandleAttackAnimEnd(bool IsCompleted)
 {
 	AttackComboStack = 0;

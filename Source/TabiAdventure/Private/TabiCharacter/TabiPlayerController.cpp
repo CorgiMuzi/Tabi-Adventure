@@ -4,7 +4,7 @@
 
 #include "TabiCharacter/TabiPlayerCharacter.h"
 #include "TabiWidget/TabiPlayerHUD.h"
-#include "TabiGameMode/TabiAdventureGameModeBase.h"
+#include "TabiGameFramework/TabiAdventureGameModeBase.h"
 
 void ATabiPlayerController::OnPossess(APawn* InPawn)
 {
@@ -38,7 +38,7 @@ void ATabiPlayerController::HandleCharacterDead()
 {
 	if (ATabiAdventureGameModeBase* GameMode = GetWorld()->GetAuthGameMode<ATabiAdventureGameModeBase>())
 	{
-		GameMode->OnPlayerDied();
+		GameMode->OnPlayerDied(this);
 	}
 }
 

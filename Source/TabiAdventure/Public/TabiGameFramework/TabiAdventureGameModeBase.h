@@ -20,37 +20,38 @@ UCLASS()
 class TABIADVENTURE_API ATabiAdventureGameModeBase : public AGameModeBase
 {
 	GENERATED_BODY()
+
 public:
 	ATabiAdventureGameModeBase();
 
-	UFUNCTION()
-	void OnPlayerDied();
-
-	void OnPlayerReachedGoal();
+	void OnPlayerDied(APlayerController* InPC);
+	void OnPlayerReachedGoal(APlayerController* InPC);
 
 	ETabiAdventureMatchState GetMatchState() const { return MatchState; }
+
 protected:
 	virtual void BeginPlay() override;
 
-	void HandleVictory();
-	void HandleDefeat(APlayerController* InInstigator);
+	void HandleVictory(APlayerController* InPC);
+	void HandleDefeat(APlayerController* InPC);
+
+	//~ Ending
+	UPROPERTY(EditDefaultsOnly, Category="Tabi|GameMode")
+	float FadeOutTime;
+	//~ End Ending
 
 	//~ Credits
-	UPROPERTY(EditDefaultsOnly)
-	TObjectPtr<UWorld> CreditWorld;
-
 	FTimerHandle CreditTransitionDelayTimerHandle;
 
 	// How long should it delayed to start fade-out for transitiong to credit world.
-	UPROPERTY()
+	UPROPERTY(EditDefaultsOnly, Category="Tabi|GameMode")
 	float CreditTransitionDelay;
 	//~ End Credits
 
-
-
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, Category="Tabi|GameMode")
 	TSubclassOf<class UUserWidget> DefeatNotifyWidgetClass;
-private:
 
+private:
+	UPROPERTY(VisibleAnywhere, Category="Tabi|GameMode")
 	ETabiAdventureMatchState MatchState;
 };

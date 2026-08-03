@@ -4,7 +4,7 @@
 #include "TabiInteractor/TabiGoalTrigger.h"
 #include "Components/BoxComponent.h"
 #include "TabiCharacter/TabiPlayerCharacter.h"
-#include "TabiGameMode/TabiAdventureGameModeBase.h"
+#include "TabiGameFramework/TabiAdventureGameModeBase.h"
 
 ATabiGoalTrigger::ATabiGoalTrigger()
 {
@@ -21,6 +21,6 @@ void ATabiGoalTrigger::OnGoalBoundaryBeginOverlap(UPrimitiveComponent* Overlappe
 
 	if (ATabiAdventureGameModeBase* TAGameMode = GetWorld()->GetAuthGameMode<ATabiAdventureGameModeBase>())
 	{
-		TAGameMode->OnPlayerReachedGoal();
+		TAGameMode->OnPlayerReachedGoal(PlayerCharacter->GetController<APlayerController>());
 	}
 }
