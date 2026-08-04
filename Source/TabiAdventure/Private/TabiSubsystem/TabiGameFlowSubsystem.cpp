@@ -17,7 +17,7 @@ void UTabiGameFlowSubsystem::StartNewGame()
 void UTabiGameFlowSubsystem::GoToCredits()
 {
 	const UTabiGameFlowSettings* Settings = GetDefault<UTabiGameFlowSettings>();
-	if (!ensure(Settings && !Settings->AdventureLevel.IsNull())) return;
+	if (!ensure(Settings && !Settings->CreditLevel.IsNull())) return;
 
 	UGameplayStatics::OpenLevelBySoftObjectPtr(this, Settings->CreditLevel, true);
 }
@@ -25,7 +25,7 @@ void UTabiGameFlowSubsystem::GoToCredits()
 void UTabiGameFlowSubsystem::ReturnToMainMenu()
 {
 	const UTabiGameFlowSettings* Settings = GetDefault<UTabiGameFlowSettings>();
-	if (!ensure(Settings && !Settings->AdventureLevel.IsNull())) return;
+	if (!ensure(Settings && !Settings->MenuLevel.IsNull())) return;
 	UGameplayStatics::OpenLevelBySoftObjectPtr(this, Settings->MenuLevel, true);
 }
 
