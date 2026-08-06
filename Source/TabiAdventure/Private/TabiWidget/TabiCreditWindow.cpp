@@ -3,58 +3,85 @@
 
 #include "TabiWidget/TabiCreditWindow.h"
 
-#include "Components/PanelWidget.h"
+#include "Blueprint/WidgetLayoutLibrary.h"
+#include "Components/VerticalBox.h"
+#include "Components/TextBlock.h"
 #include "TabiSubsystem/TabiGameFlowSubsystem.h"
 
 void UTabiCreditWindow::NativeConstruct()
 {
 	Super::NativeConstruct();
-
-	if (UWorld* World = GetWorld())
-	{
-		World->GetTimerManager().SetTimer(CreditHoldTimerHandle, this, &ThisClass::StartCreditScrolling, InitialHoldTime, false);
-	}
 }
 
 void UTabiCreditWindow::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
 
-	if (bIsCreditScrolling)
-	{
-		CreditElapsedTime += InDeltaTime;
-		const float Progress = FMath::Clamp(CreditElapsedTime / CreditDuration, 0.f, 1.f);
-		const float CurveValue = ScrollProgressCurve ? ScrollProgressCurve->GetFloatValue(Progress) : Progress;
-		const float TotalCreditLength = CreditLength  + MyGeometry.GetLocalSize().Y;
-		const float YOffset = CurveValue * TotalCreditLength;
-		CreditContainer->SetRenderTranslation(FVector2D(0.f, -YOffset));
+	if (!bIsInitialized) StartCreditScrolling();
 
-		if (Progress >= 1.f)
-		{
-			if (UGameInstance* GI = GetGameInstance())
-			{
-				if (UTabiGameFlowSubsystem* Subsystem = GI->GetSubsystem<UTabiGameFlowSubsystem>())
-				{
-					Subsystem->ReturnToMainMenu();
-				}
-			}
-		}
-	}
+	if (bIsContainerScrolling) ScrollCreditContainer(InDeltaTime);
+	if (bIsCommentScrolling) ScrollCreditComment(InDeltaTime);
 }
 
 void UTabiCreditWindow::StartCreditScrolling()
 {
-	if (!CreditContainer) return;
+	if (!CreditContainer || !CreditComment) return;
 
-	CreditLength = CreditContainer->GetDesiredSize().Y;
-	UE_LOG(LogTemp, Verbose, TEXT("CreditLenght: %f"), CreditLength);
-	if (CreditLength <= 0.f)
+	const float ViewportHeight = UWidgetLayoutLibrary::GetViewportWidgetGeometry(this).GetLocalSize().Y;
+
+	ContainerHeight = CreditContainer->GetDesiredSize().Y;
+	CommentHeight = CreditComment->GetDesiredSize().Y;
+
+	ContainerScrollTarget = ViewportHeight + ContainerHeight;
+	CommentScrollTarget = ViewportHeight / 2.f + CommentHeight * 0.5f;
+
+	if (UWorld* World = GetWorld())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Credit Length is 0 - Unable to scroll the credit container."));
-		return;
+		World->GetTimerManager().SetTimer(InitialHoldTimerHandle, [this]()
+		{
+			bIsContainerScrolling = bIsCommentScrolling = true;
+		}, InitialHoldTime, false);
 	}
 
-	CreditDuration = CreditLength / FMath::Max(ScrollSpeed, 1.f);
+	bIsInitialized = true;
+}
 
-	bIsCreditScrolling = true;
+void UTabiCreditWindow::ScrollCreditContainer(float InDeltaTime)
+{
+	if (!CreditContainer) return;
+	ContainerYOffset += ScrollSpeed * InDeltaTime;
+	CreditContainer->SetRenderTranslation(FVector2D(0.f, -ContainerYOffset));
+
+	if (ContainerYOffset >= ContainerScrollTarget)
+	{
+		bIsContainerScrolling = false;
+		return;
+	}
+}
+
+void UTabiCreditWindow::ScrollCreditComment(float InDeltaTime)
+{
+	if (!CreditComment) return;
+	if (bIsContainerScrolling) return;
+	CommentYOffset += ScrollSpeed * InDeltaTime;
+	CreditComment->SetRenderTranslation(FVector2D(0.f, -CommentYOffset));
+
+	if (CommentYOffset >= CommentScrollTarget)
+	{
+		bIsCommentScrolling = false;
+		if (UWorld* World = GetWorld())
+		{
+			World->GetTimerManager().SetTimer(FinalHoldTimerHandle, [this]()
+			{
+				if (UGameInstance* GI = GetGameInstance())
+				{
+					if (UTabiGameFlowSubsystem* Subsystem = GI->GetSubsystem<UTabiGameFlowSubsystem>())
+					{
+						Subsystem->ReturnToMainMenu();
+					}
+				}
+			}, FinalHoldTime, false);
+		}
+		return;
+	}
 }

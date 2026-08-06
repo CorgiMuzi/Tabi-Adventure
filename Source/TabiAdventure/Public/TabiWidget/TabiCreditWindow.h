@@ -6,9 +6,9 @@
 #include "Blueprint/UserWidget.h"
 #include "TabiCreditWindow.generated.h"
 
-/**
- * 
- */
+class UVerticalBox;
+class UTextBlock;
+
 UCLASS()
 class TABIADVENTURE_API UTabiCreditWindow : public UUserWidget
 {
@@ -19,26 +19,40 @@ protected:
 	virtual void NativeConstruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
+	UFUNCTION(BlueprintCallable, Category="Tabi|Credit")
 	void StartCreditScrolling();
+	void ScrollCreditContainer(float InDeltaTime);
+	void ScrollCreditComment(float InDeltaTime);
 
 	UPROPERTY(EditDefaultsOnly, Category="Tabi|Credit")
-	TObjectPtr<UCurveFloat> ScrollProgressCurve;
+	float InitialHoldTime = 0.3f;
 
-	UPROPERTY(EditAnywhere, Category="Tabi|Credit")
-	float InitialHoldTime = 1.f;
+	UPROPERTY(EditDefaultsOnly, Category="Tabi|Credit")
+	float FinalHoldTime = 1.f;
 
 	UPROPERTY(EditAnywhere, Category="Tabi|Credit")
 	float ScrollSpeed;
 
-	float CreditDuration;
-	float CreditElapsedTime;
+	float ContainerHeight;
+	float ContainerScrollTarget;
+	float ContainerYOffset{0.f};
+
+	float CommentHeight;
+	float CommentScrollTarget;
+	float CommentYOffset{0.f};
 
 	UPROPERTY(EditDefaultsOnly, Category="Tabi|Credit", meta=(BindWidget))
-	TObjectPtr<class UPanelWidget> CreditContainer;
+	TObjectPtr<UVerticalBox> CreditContainer;
 
-	UPROPERTY()
-	float CreditLength = 1.f;
+	UPROPERTY(EditDefaultsOnly, Category="Tabi|Credit", meta=(BindWidget))
+	TObjectPtr<UTextBlock> CreditComment;
 
-	bool bIsCreditScrolling{false};
-	FTimerHandle CreditHoldTimerHandle;
+	bool bIsContainerScrolling{false};
+	bool bIsCommentScrolling{false};
+
+	FTimerHandle InitialHoldTimerHandle;
+	FTimerHandle FinalHoldTimerHandle;
+
+private:
+	bool bIsInitialized{false};
 };
