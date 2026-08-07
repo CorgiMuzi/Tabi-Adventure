@@ -12,6 +12,9 @@ void ATabiPlayerController::OnPossess(APawn* InPawn)
 
 	CreatePlayerHUD();
 
+	SetInputMode(FInputModeGameOnly());
+	SetShowMouseCursor(false);
+
 	if (ATabiPlayerCharacter* PlayerCharacter = Cast<ATabiPlayerCharacter>(InPawn))
 	{
 		PlayerCharacter->OnTabiCharacterDead.AddDynamic(this, &ThisClass::HandleCharacterDead);

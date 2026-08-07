@@ -49,6 +49,7 @@ void ATabiAdventureGameModeBase::HandleDefeat(APlayerController* InPC)
 	DefeatNotifyWidget->AddToViewport();
 	FInputModeUIOnly DefeatInputMode;
 	InPC->SetInputMode(DefeatInputMode);
+	InPC->SetShowMouseCursor(true);
 }
 
 void ATabiAdventureGameModeBase::OnPlayerDied(APlayerController* InPC)

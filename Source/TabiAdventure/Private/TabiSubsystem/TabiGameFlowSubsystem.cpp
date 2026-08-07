@@ -34,3 +34,8 @@ void UTabiGameFlowSubsystem::RestartCurrentGame()
 	const FString CurrentLevelName = UGameplayStatics::GetCurrentLevelName(this);
 	UGameplayStatics::OpenLevel(this, FName(CurrentLevelName), true);
 }
+
+void UTabiGameFlowSubsystem::QuitGame()
+{
+	UKismetSystemLibrary::QuitGame(this, nullptr, EQuitPreference::Quit, false);
+}

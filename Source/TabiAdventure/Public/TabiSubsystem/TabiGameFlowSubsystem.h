@@ -16,4 +16,5 @@ public:
 	void GoToCredits();
 	void ReturnToMainMenu();
 	void RestartCurrentGame();
+	void QuitGame();
 };
