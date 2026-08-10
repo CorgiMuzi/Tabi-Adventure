@@ -8,6 +8,9 @@ DerivedDataCache/
 Intermediate/
 Saved/
 
+# User preferences
+Config/DefaultEditorPerProjectUserSettings.ini
+
 # Build records
 Build/
 
