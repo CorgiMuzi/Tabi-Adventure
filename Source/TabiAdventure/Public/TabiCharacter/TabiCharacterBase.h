@@ -63,14 +63,21 @@ public:
 	inline bool IsAlive() const;
 	//~ End Character State
 
+	//~ Helper functions to control the character sprite.
+	void SetSpriteColor(const FLinearColor& InColor);
+
+	void SetSpriteRelativeLocation(const FVector& InLocation);
+	FVector GetSpriteRelativeLocation() const;
+	//~ End Sprite Helpers
+
 	//~ Vital
 	UTabiVitalComponent* GetVitalComponent() const { return VitalComponent;}
 	//~ End Vital
 
 	//~ Combat
+	void StopAttack();
 	bool CanAttack() const;
 	virtual FTabiRequestID RequestAttack();
-	void StopAttack();
 	/**
 	 * Apply damage to this character.
 	 * @param AttackDefinition Attack skill contenxt.

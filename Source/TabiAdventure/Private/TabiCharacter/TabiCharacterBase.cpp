@@ -174,7 +174,7 @@ void ATabiCharacterBase::Landed(const FHitResult& Hit)
 	Super::Landed(Hit);
 
 	if (bIsAirDodging) bIsAirDodging = false;
-	SetCharacterState(ETabiCharacterState::Idling);
+	if (GetCharacterState() != ETabiCharacterState::Stunned) SetCharacterState(ETabiCharacterState::Idling);
 	CurrentPlatform = Hit.GetActor();
 }
 
@@ -196,46 +196,33 @@ bool ATabiCharacterBase::CanAttack() const
 		CurrentState != ETabiCharacterState::Stunned;
 }
 
-void ATabiCharacterBase::StopAttack()
-{
-	if (CombatComponent) CombatComponent->StopAttack();
-}
-
 bool ATabiCharacterBase::ReceiveDamage(const UTabiAttackDefinition* AttackDefinition, const AActor* DamageCauser)
 {
 	// Return false when the character is not vulnerable
 	if (!CombatComponent->IsVulnerable()) return false;
 	// Return when failed to dealing damage.
 	if (!VitalComponent->ModifyCurrentValue(ETabiVitalType::HP, -AttackDefinition->GetDamage())) return false;
+	UE_LOG(LogTemp, Warning, TEXT("HP: %f"), VitalComponent->GetCurrentValueByType(ETabiVitalType::HP));
 	// Don't play hit reaction animations when character is dead.
 	if (CurrentState == ETabiCharacterState::Dead) return false;
 
-	StopAttack();
-
-	if (Flipbook)
+	if (CombatComponent)
 	{
-		Flipbook->SetSpriteColor(FLinearColor::White);
-	}
+		CombatComponent->OnCharacterDamaged(AttackDefinition, this, DamageCauser);
 
-	GetWorld()->GetTimerManager().SetTimer(HurtEffectTimerHandle, FTimerDelegate::CreateLambda(
-		                                       [this]()
-		                                       {
-			                                       if (Flipbook) Flipbook->SetSpriteColor(DefaultColor);
-		                                       }), .1f, false);
+		if (DamageCauser)
+		{
+			FVector KnockbackDir = GetActorLocation() - DamageCauser->GetActorLocation();
+			KnockbackDir.Z = 0.f;
+			KnockbackDir.Y = 0.f;
 
-	if (DamageCauser && SetCharacterState(ETabiCharacterState::Stunned))
-	{
-		StartStunTimer(AttackDefinition->GetHitStunDuration());
-		FVector KnockbackDir = GetActorLocation() - DamageCauser->GetActorLocation();
-		KnockbackDir.Z = 0.f;
-		KnockbackDir.Y = 0.f;
+			KnockbackDir = KnockbackDir.GetSafeNormal();
 
-		KnockbackDir = KnockbackDir.GetSafeNormal();
+			FVector KnockbackVelocity = KnockbackDir * (AttackDefinition->GetKnockbackStrength() - StatComponent->GetStatCurrentValue(ETabiStatType::Resistance));
+			KnockbackVelocity.Z = AttackDefinition->GetKnockbackLiftSpeed();
 
-		FVector KnockbackVelocity = KnockbackDir * (AttackDefinition->GetKnockbackStrength() - StatComponent->GetStatCurrentValue(ETabiStatType::Resistance));
-		KnockbackVelocity.Z = AttackDefinition->GetKnockbackLiftSpeed();
-
-		LaunchCharacter(KnockbackVelocity, true, true);
+			LaunchCharacter(KnockbackVelocity, true, true);
+		}
 	}
 
 	return true;
@@ -320,6 +307,12 @@ void ATabiCharacterBase::EndDodge(const float GroundFriction, const float Brakin
 	}, DodgeRecoveryTime, false);
 }
 
+void ATabiCharacterBase::StopAttack()
+{
+	if (!CombatComponent) return;
+	CombatComponent->StopAttack();
+}
+
 void ATabiCharacterBase::StartStunTimer(float BaseStunDuration, bool ShouldApplyStat /*true*/)
 {
 	if (!CombatComponent) return;
@@ -349,6 +342,7 @@ void ATabiCharacterBase::SetTabiTeamId(const ETabiCharacterTeamID& TeamID)
 void ATabiCharacterBase::MoveAlongX(float ScaleX)
 {
 	if (FMath::IsNearlyZero(ScaleX)) return;
+	if (!CanMove()) return;
 
 	SetFacingRight(ScaleX > 0.f);
 
@@ -446,8 +440,11 @@ void ATabiCharacterBase::OnCharacterStateChanged(ETabiCharacterState OldState, E
 			break;
 
 		case ETabiCharacterState::Dodging:
-			CombatComponent->SetVulnerability(false);
+			if (CombatComponent) CombatComponent->SetVulnerability(true);
 			break;
+
+		case ETabiCharacterState::Stunned:
+			if (CombatComponent) CombatComponent->SetVulnerability(true);
 
 		default: break;
 	}
@@ -473,8 +470,11 @@ void ATabiCharacterBase::OnCharacterStateChanged(ETabiCharacterState OldState, E
 			break;
 
 		case ETabiCharacterState::Dodging:
-			CombatComponent->SetVulnerability(true);
+			if (CombatComponent) CombatComponent->SetVulnerability(false);
 			break;
+
+		case ETabiCharacterState::Stunned:
+			if (CombatComponent) CombatComponent->SetVulnerability(false);
 
 		default: break;
 	}
@@ -491,6 +491,24 @@ bool ATabiCharacterBase::CanMove() const
 bool ATabiCharacterBase::IsAlive() const
 {
 	return CurrentState != ETabiCharacterState::Dead;
+}
+
+void ATabiCharacterBase::SetSpriteColor(const FLinearColor& InColor)
+{
+	if (!Flipbook) return;
+	Flipbook->SetSpriteColor(InColor);
+}
+
+void ATabiCharacterBase::SetSpriteRelativeLocation(const FVector& InLocation)
+{
+	if (!Flipbook) return;
+	Flipbook->SetRelativeLocation(InLocation);
+}
+
+FVector ATabiCharacterBase::GetSpriteRelativeLocation() const
+{
+	if (!Flipbook) return FVector::ZeroVector;
+	return Flipbook->GetRelativeLocation();
 }
 
 void ATabiCharacterBase::TickStaminaRegen(const float DeltaTime)
@@ -527,7 +545,7 @@ const AActor* ATabiCharacterBase::GetCurrentPlatform() const
 
 bool ATabiCharacterBase::IsOnSamePlatformAs(const AActor* OtherActor) const
 {
-	const ATabiCharacterBase* OtherCharacter = Cast<ATabiCharacterBase>(OtherActor);
+const ATabiCharacterBase* OtherCharacter = Cast<ATabiCharacterBase>(OtherActor);
 	if (OtherCharacter == nullptr) return false;
 
 	const AActor* MyPlatform = GetCurrentPlatform();

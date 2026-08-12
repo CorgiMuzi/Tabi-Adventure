@@ -66,6 +66,71 @@ void UTabiCombatComponent::DisableHitCollision()
 	if (Hitbox) Hitbox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
+void UTabiCombatComponent::OnCharacterDamaged(const UTabiAttackDefinition* AttackDefinition, AActor* DamagedActor, const AActor* DamageCauser)
+{
+	StopAttack();
+
+	if (!DamagedActor) return;
+
+	if (ATabiCharacterBase* DamagedCharacter = Cast<ATabiCharacterBase>(DamagedActor))
+	{
+		DamagedCharacter->SetCharacterState(ETabiCharacterState::Stunned);
+	}
+
+	if (AttackDefinition)
+	{
+		StartStunTimer(DamagedActor, AttackDefinition->GetHitStunDuration());
+	}
+}
+
+void UTabiCombatComponent::StartStunTimer(AActor* StunnedActor, const float BaseStunDuration, const bool ShouldApplyStat)
+{
+	const float FinalStunDuration = BaseStunDuration;
+	if (ShouldApplyStat)
+	{
+		/**
+		 * Calculate final stun duration when stat should be applied.
+		 */
+	}
+
+	if (FinalStunDuration <= 0.f) return;
+
+	if (UWorld* World = GetWorld())
+	{
+		TWeakObjectPtr<UTabiCombatComponent> WeakThis(this);
+
+		// Start shaking and blinking effect on the stunned character
+		World->GetTimerManager().SetTimer(StunActivationTimerHandle, [WeakThis, StunnedActor]()
+		{
+			if (!WeakThis.IsValid()) return;
+			const UWorld* InWorld = WeakThis->GetWorld();
+			if (!InWorld) return;
+			InWorld->GetTimerManager().ClearTimer(WeakThis->StunEffectBlinkTimerHandle);
+
+			if (ATabiCharacterBase* StunnedCharacter = Cast<ATabiCharacterBase>(StunnedActor))
+			{
+				// Reset sprite color
+				StunnedCharacter->SetSpriteColor(FLinearColor::White);
+				WeakThis->bBlinkFlag = true;
+
+				// Finish stunned state
+				StunnedCharacter->SetCharacterState(ETabiCharacterState::Idling);
+			}
+		}, FinalStunDuration, false);
+
+		// Blink character
+		World->GetTimerManager().SetTimer(StunEffectBlinkTimerHandle, [WeakThis, StunnedActor]()
+		{
+			if (!WeakThis.IsValid() || StunnedActor == nullptr) return;
+			ATabiCharacterBase* StunnedCharacter = Cast<ATabiCharacterBase>(StunnedActor);
+			if (!StunnedCharacter) return;
+			FLinearColor SpriteColor = WeakThis->bBlinkFlag ? FLinearColor::Red : FLinearColor::White;
+			StunnedCharacter->SetSpriteColor(SpriteColor);
+			WeakThis->bBlinkFlag = !WeakThis->bBlinkFlag;
+		}, StunEffectBlinkPeriod, true);
+	}
+}
+
 void UTabiCombatComponent::OnHitboxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	ATabiCharacterBase* Target = Cast<ATabiCharacterBase>(OtherActor);
@@ -143,6 +208,12 @@ void UTabiCombatComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	if (Hitbox)
 	{
 		Hitbox->OnComponentBeginOverlap.RemoveDynamic(this, &ThisClass::OnHitboxBeginOverlap);
+	}
+
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(StunEffectBlinkTimerHandle);
+		World->GetTimerManager().ClearTimer(StunActivationTimerHandle);
 	}
 
 	Super::EndPlay(EndPlayReason);

@@ -41,6 +41,9 @@ public:
 	UFUNCTION()
 	virtual void DisableHitCollision();
 
+	void OnCharacterDamaged(const UTabiAttackDefinition* AttackDefinition, AActor* DamagedActor, const AActor* DamageCauser);
+	void StartStunTimer(AActor* StunnedActor, const float BaseStunDuration, const bool ShouldApplyStat = true);
+
 	void SetVulnerability(const bool InVulnerability) { bIsVulnerable = InVulnerability;}
 	bool IsVulnerable() const { return bIsVulnerable; }
 
@@ -57,6 +60,11 @@ protected:
 	UPROPERTY()
 	TSoftObjectPtr<UTabiAnimInstance> AnimInstance;
 	//~ End Animation
+
+	//~ Stunning
+	UPROPERTY(EditDefaultsOnly)
+	float StunEffectBlinkPeriod{0.3f};
+	//~ End Stunning
 
 	//~ Hitbox
 	UFUNCTION()
@@ -95,4 +103,11 @@ protected:
 private:
 	static uint32 NextRequestID;
 	FTabiRequestID CurrentRequestID;
+
+	//~ Stunning
+	FTimerHandle StunEffectBlinkTimerHandle;
+	FTimerHandle StunActivationTimerHandle;
+
+	bool bBlinkFlag = true;
+	//~ End Stunning
 };
