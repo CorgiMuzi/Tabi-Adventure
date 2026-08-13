@@ -13,14 +13,12 @@ void UTabiDefeatNotify::NativeConstruct()
 
 	Button_Retry->OnTabiButtonReleased.AddDynamic(this, &ThisClass::OnRetryButtonReleased);
 	Button_MainMenu->OnTabiButtonReleased.AddDynamic(this, &ThisClass::OnMainMenuButtonReleased);
-	Button_Quit->OnTabiButtonReleased.AddDynamic(this, &ThisClass::OnQuitButtonReleased);
 }
 
 void UTabiDefeatNotify::NativeDestruct()
 {
 	Button_Retry->OnTabiButtonReleased.RemoveDynamic(this, &ThisClass::OnRetryButtonReleased);
 	Button_MainMenu->OnTabiButtonReleased.RemoveDynamic(this, &ThisClass::OnMainMenuButtonReleased);
-	Button_Quit->OnTabiButtonReleased.RemoveDynamic(this, &ThisClass::OnQuitButtonReleased);
 
 	Super::NativeDestruct();
 }
@@ -43,17 +41,6 @@ void UTabiDefeatNotify::OnMainMenuButtonReleased()
 		if (UTabiGameFlowSubsystem* Subsystem = GI->GetSubsystem<UTabiGameFlowSubsystem>())
 		{
 			Subsystem->ReturnToMainMenu();
-		}
-	}
-}
-
-void UTabiDefeatNotify::OnQuitButtonReleased()
-{
-	if (UGameInstance* GI = GetGameInstance())
-	{
-		if (UTabiGameFlowSubsystem* Subsystem = GI->GetSubsystem<UTabiGameFlowSubsystem>())
-		{
-			Subsystem->QuitGame();
 		}
 	}
 }

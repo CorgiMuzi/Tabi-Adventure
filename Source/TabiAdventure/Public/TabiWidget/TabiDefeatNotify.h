@@ -23,15 +23,9 @@ protected:
 	UFUNCTION()
 	void OnMainMenuButtonReleased();
 
-	UFUNCTION()
-	void OnQuitButtonReleased();
-
 	UPROPERTY(EditDefaultsOnly, Category="Tabi|Widget", meta=(BindWidget))
 	TObjectPtr<UTabiButton> Button_Retry;
 
 	UPROPERTY(EditDefaultsOnly, Category="Tabi|Widget", meta=(BindWidget))
 	TObjectPtr<UTabiButton> Button_MainMenu;
-
-	UPROPERTY(EditDefaultsOnly, Category="Tabi|Widget", meta=(BindWidget))
-	TObjectPtr<UTabiButton> Button_Quit;
 };

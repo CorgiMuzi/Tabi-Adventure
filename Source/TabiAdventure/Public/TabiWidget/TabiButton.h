@@ -25,15 +25,15 @@ public:
 	UPROPERTY(EditAnywhere, Category="Tabi|Button")
 	FText InButtonText;
 
+	UPROPERTY(EditDefaultsOnly, Category="Tabi|Button", meta=(BindWidget))
+	TObjectPtr<class UButton> TargetButton;
+
 protected:
 	virtual void NativePreConstruct() override;
 	virtual void NativeConstruct() override;
 
 	UPROPERTY(EditDefaultsOnly, Category="Tabi|Button", meta=(BindWidget))
 	TObjectPtr<class USizeBox> ButtonSizeBox;
-
-	UPROPERTY(EditDefaultsOnly, Category="Tabi|Button", meta=(BindWidget))
-	TObjectPtr<class UButton> TargetButton;
 
 	UPROPERTY(EditDefaultsOnly, Category="Tabi|Button", meta=(BindWidget))
 	TObjectPtr<class UTextBlock> ButtonText;
