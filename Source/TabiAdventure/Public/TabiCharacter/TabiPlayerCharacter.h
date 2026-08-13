@@ -34,6 +34,8 @@ public:
 	//~ ATabiCharacterBase
 	UFUNCTION()
 	virtual void HandleAttackInput();
+
+	virtual void HandleDeathAnimEnd() override;
 	//~ End ATabiCharacterBase
 
 	//~ Enhanced Input

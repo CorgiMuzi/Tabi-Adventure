@@ -48,6 +48,13 @@ void ATabiEnemyBase::InitHealthBar()
 	HealthBar->SetOwningVital(GetVitalComponent());
 }
 
+void ATabiEnemyBase::HandleDeathAnimEnd()
+{
+	Super::HandleDeathAnimEnd();
+
+	Destroy();
+}
+
 float ATabiEnemyBase::GetAttackRadius() const
 {
 	return AICombatComponent ? AICombatComponent->GetAttackRadius() : 0.f;

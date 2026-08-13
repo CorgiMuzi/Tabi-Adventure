@@ -43,6 +43,8 @@ protected:
 	TObjectPtr<UWidgetComponent> HealthBarWidgetComponent;
 	//~ End Vital
 
+	virtual void HandleDeathAnimEnd() override;
+
 public:
 	//~ Getter & Setter
 	inline UBehaviorTree* GetBehaviorTree() const { return BehaviorTree; }

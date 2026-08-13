@@ -78,6 +78,14 @@ void ATabiPlayerCharacter::HandleAttackInput()
 	RequestAttack();
 }
 
+void ATabiPlayerCharacter::HandleDeathAnimEnd()
+{
+	Super::HandleDeathAnimEnd();
+
+	SetActorHiddenInGame(true);
+	SetActorEnableCollision(false);
+}
+
 void ATabiPlayerCharacter::SetGameplayInputEnabled(const bool bIsEnabled)
 {
 	APlayerController* PC = GetController<APlayerController>();

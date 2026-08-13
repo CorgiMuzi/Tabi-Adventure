@@ -367,7 +367,13 @@ void ATabiCharacterBase::HandleDeathAnimEnd()
 	if (bDeathHandled) return;
 	bDeathHandled = true;
 	GetWorldTimerManager().ClearTimer(DeathFallbackTimerHandle);
-	Destroy();
+
+	/**
+	 * - Player would be hidden in game
+	 *	SetAtorHiddenInGame(true);
+	 * - Enemy would be destroyed
+	 * Destroy();
+	**/
 }
 
 void ATabiCharacterBase::OnCharacterDead(const ETabiVitalType& InVitalType)
