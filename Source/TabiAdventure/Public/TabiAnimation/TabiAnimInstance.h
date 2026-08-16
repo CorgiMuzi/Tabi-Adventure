@@ -24,8 +24,10 @@ class TABIADVENTURE_API UTabiAnimInstance : public UPaperZDAnimInstance
 public:
 	UTabiAnimInstance();
 	virtual void OnInit_Implementation() override;
-
 	virtual void Tick(float DeltaTime) override;
+
+	void RegisterLoopSound(const UPaperZDAnimNotify_Base* NotifyKey, UAudioComponent* Audio);
+	void StopLoopSound(const UPaperZDAnimNotify_Base* NotifyKey, const float FadeOutDuration);
 
 	/// Play attack animation
 	/// @param AttackAnimSequence
@@ -34,10 +36,8 @@ public:
 	void StopAttackAnimation();
 	bool PlayDeadAnimation(const UPaperZDAnimSequence* DeadAnimSequence);
 
-	UFUNCTION(BlueprintCallable, Category="Tabi|Combat")
-	void PlayNotify_EnableHitCollision();
-	UFUNCTION(BlueprintCallable, Category="Tabi|Combat")
-	void PlayNotify_DisableHitCollision();
+	void NotifyEnableHitCollision();
+	void NotifyDisableHitCollision();
 
 	FOnAttackAnimEndSignature OnAttackAnimEnd;
 	FOnDeadAnimEndSignature OnDeathAnimEnd;
@@ -57,6 +57,9 @@ protected:
 private:
 	void HandleAttackAnimEnd(bool IsCompleted);
 	void HandleDeadAnimEnd(bool IsCompleted);
+
+	UPROPERTY(Transient)
+	TMap<TObjectPtr<const UPaperZDAnimNotify_Base>, TObjectPtr<UAudioComponent>> ActiveLoopSounds;
 
 public:
 	inline void SetSpeed(const float NewSpeed) { Speed = NewSpeed; }

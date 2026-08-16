@@ -2,6 +2,8 @@
 
 
 #include "TabiAnimation/TabiAnimInstance.h"
+
+#include "Components/AudioComponent.h"
 #include "TabiData/TabiAttackDefinition.h"
 
 UTabiAnimInstance::UTabiAnimInstance()
@@ -16,6 +18,23 @@ void UTabiAnimInstance::OnInit_Implementation()
 void UTabiAnimInstance::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+}
+
+void UTabiAnimInstance::RegisterLoopSound(const UPaperZDAnimNotify_Base* NotifyKey, UAudioComponent* Audio)
+{
+	if (auto ExistSound = ActiveLoopSounds.Find(NotifyKey))
+	{
+		if (*ExistSound) (*ExistSound)->Stop();
+	}
+
+	ActiveLoopSounds.Add(NotifyKey, Audio);
+}
+
+void UTabiAnimInstance::StopLoopSound(const UPaperZDAnimNotify_Base* NotifyKey, const float FadeOutDuration)
+{
+	TObjectPtr<UAudioComponent> AudioToRemove;
+	ActiveLoopSounds.RemoveAndCopyValue(NotifyKey, AudioToRemove);
+	if (AudioToRemove) FadeOutDuration > 0.f ? AudioToRemove->FadeOut(FadeOutDuration, 0.f) : AudioToRemove->Stop();
 }
 
 bool UTabiAnimInstance::PlayAttackAnimation(const UPaperZDAnimSequence* AttackAnimSequence)
@@ -35,23 +54,18 @@ bool UTabiAnimInstance::PlayDeadAnimation(const UPaperZDAnimSequence* DeadAnimSe
 	return PlayAnimationOverride(DeadAnimSequence, TEXT("DefaultSlot"), 1.f, 0, FZDOnAnimationOverrideEndSignature::CreateUObject(this, &ThisClass::HandleDeadAnimEnd));
 }
 
-void UTabiAnimInstance::PlayNotify_EnableHitCollision()
+void UTabiAnimInstance::NotifyEnableHitCollision()
 {
-	OnEnableHitCollision.Execute();
+	OnEnableHitCollision.ExecuteIfBound();
 }
 
-void UTabiAnimInstance::PlayNotify_DisableHitCollision()
+void UTabiAnimInstance::NotifyDisableHitCollision()
 {
-	OnDisableHitCollision.Execute();
+	OnDisableHitCollision.ExecuteIfBound();
 }
 
 void UTabiAnimInstance::HandleAttackAnimEnd(bool IsCompleted)
 {
-	if (!IsCompleted)
-	{
-		OnDisableHitCollision.Execute();
-	}
-
 	OnAttackAnimEnd.Broadcast(IsCompleted);
 }
 
@@ -59,5 +73,5 @@ void UTabiAnimInstance::HandleDeadAnimEnd(bool IsCompleted)
 {
 	if (!IsCompleted) return;
 
-	OnDeathAnimEnd.Execute();
+	OnDeathAnimEnd.ExecuteIfBound();
 }
