@@ -276,8 +276,8 @@ protected:
 
 	FGenericTeamId TabiTeamId;
 
-	UPROPERTY(VisibleAnywhere, Category="Tabi|Perception")
-	TObjectPtr<AActor> CurrentPlatform;
+	UPROPERTY(VisibleAnywhere, Category="Tabi|Perception", Transient)
+	TWeakObjectPtr<AActor> CurrentPlatform;
 	//~ AI Perception
 
 private:

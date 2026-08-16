@@ -546,7 +546,7 @@ const AActor* ATabiCharacterBase::GetCurrentPlatform() const
 	}
 
 	// Return cached platform when character is jumping/falling or on invalid platform
-	return CurrentPlatform;
+	return CurrentPlatform.Get();
 }
 
 bool ATabiCharacterBase::IsOnSamePlatformAs(const AActor* OtherActor) const
