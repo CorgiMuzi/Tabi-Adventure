@@ -55,6 +55,11 @@ public:
 	virtual void Jump() override;
 	virtual void Landed(const FHitResult& Hit) override;
 	void MoveAlongX(float ScaleX);
+	/**
+	 * It can move the characters along the Y-axis, but should resolve z-fighting problem first.
+	 * @param ScaleY
+	 */
+	void MoveAlongY(float ScaleY);
 
 	//~ Character State
 	bool SetCharacterState(ETabiCharacterState NewState);
@@ -89,6 +94,8 @@ public:
 	UBoxComponent* GetHitbox() const { return Hitbox; }
 	UBoxComponent* GetHurtbox() const { return Hurtbox; }
 	UTabiCombatComponent* GetCombatComponent() const { return CombatComponent; }
+
+	void ApplyHitboxOffset(FVector HitboxOffset);
 	//~ End Combat
 
 	//~ Delegates

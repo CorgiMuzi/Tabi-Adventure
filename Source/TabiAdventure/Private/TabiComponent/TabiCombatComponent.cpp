@@ -48,6 +48,7 @@ void UTabiCombatComponent::SetupHitbox(ATabiCharacterBase* Owner)
 	Hitbox->SetBoxExtent(HitboxExtent);
 
 	HitboxBaseOffset = FVector(AttackRadius / 2.f, 0.f, 0.f);
+	Owner->ApplyHitboxOffset(HitboxBaseOffset);
 
 	Hitbox->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnHitboxBeginOverlap);
 	Hitbox->SetCollisionEnabled(ECollisionEnabled::NoCollision);

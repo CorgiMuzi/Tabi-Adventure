@@ -349,6 +349,14 @@ void ATabiCharacterBase::MoveAlongX(float ScaleX)
 	AddMovementInput(FVector::ForwardVector, ScaleX);
 }
 
+void ATabiCharacterBase::MoveAlongY(float ScaleY)
+{
+	if (FMath::IsNearlyZero(ScaleY)) return;
+	if (!CanMove()) return;
+
+	AddMovementInput(FVector::RightVector, ScaleY);
+}
+
 void ATabiCharacterBase::HandleSpeedChanged(ETabiStatType StatType, float NewSpeed, float OldSpeed)
 {
 	if (StatType != ETabiStatType::Speed) return;
@@ -411,12 +419,15 @@ void ATabiCharacterBase::OnFacingChanged()
 	NewRot.Yaw = bIsFacingRight ? 0.f : 180.f;
 	GetSprite()->SetRelativeRotation(NewRot);
 
-	if (Hitbox)
-	{
-		FVector Offset = CombatComponent ? CombatComponent->GetHitboxBaseOffset() : GetCharacterHalfSize();
-		Offset.X = bIsFacingRight ? Offset.X : -Offset.X;
-		Hitbox->SetRelativeLocation(Offset);
-	}
+	FVector Offset = CombatComponent ? CombatComponent->GetHitboxBaseOffset() : FVector(GetCharacterHalfSize().X, 0.f, 0.f);
+	ApplyHitboxOffset(Offset);
+}
+
+void ATabiCharacterBase::ApplyHitboxOffset(FVector HitboxOffset)
+{
+	if (!Hitbox) return;
+	HitboxOffset.X = bIsFacingRight ? HitboxOffset.X : -HitboxOffset.X;
+	Hitbox->SetRelativeLocation(HitboxOffset);
 }
 
 bool ATabiCharacterBase::SetCharacterState(ETabiCharacterState NewState)
@@ -551,7 +562,7 @@ const AActor* ATabiCharacterBase::GetCurrentPlatform() const
 
 bool ATabiCharacterBase::IsOnSamePlatformAs(const AActor* OtherActor) const
 {
-const ATabiCharacterBase* OtherCharacter = Cast<ATabiCharacterBase>(OtherActor);
+	const ATabiCharacterBase* OtherCharacter = Cast<ATabiCharacterBase>(OtherActor);
 	if (OtherCharacter == nullptr) return false;
 
 	const AActor* MyPlatform = GetCurrentPlatform();

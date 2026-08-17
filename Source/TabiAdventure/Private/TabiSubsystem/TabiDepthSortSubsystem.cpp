@@ -33,7 +33,6 @@ void UTabiDepthSortSubsystem::Tick(float DeltaTime)
 			return Lhs->IsPlayerTeam();
 		}
 
-
 		const FVector& LLocation = Lhs->GetActorLocation();
 		const FVector& RLocation = Rhs->GetActorLocation();
 
