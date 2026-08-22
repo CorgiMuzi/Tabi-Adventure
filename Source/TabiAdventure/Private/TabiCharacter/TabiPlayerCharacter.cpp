@@ -69,11 +69,11 @@ void ATabiPlayerCharacter::Move(const FInputActionValue& Value)
 	if (!CanMove()) return;
 
 	const float ScaleX = FMath::Clamp(Value.Get<FVector2D>().X, -1.f, 1.f);
-	const float ScaleY = FMath::Clamp(Value.Get<FVector2D>().Y, -1.f, 1.f);
 
 	MoveAlongX(ScaleX);
 	/**
 	* FIXME: Z-fighting problem.
+	* const float ScaleY = FMath::Clamp(Value.Get<FVector2D>().Y, -1.f, 1.f);
 	* MoveAlongY(ScaleY);
 	**/
 
@@ -89,7 +89,7 @@ void ATabiPlayerCharacter::HandleDeathAnimEnd()
 	Super::HandleDeathAnimEnd();
 
 	SetActorHiddenInGame(true);
-	SetActorEnableCollision(false);
+	SetActorEnableCollision(false);	
 }
 
 void ATabiPlayerCharacter::SetGameplayInputEnabled(const bool bIsEnabled)
