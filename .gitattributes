@@ -1,0 +1,65 @@
+# ============================================================================
+#  Line endings
+#  Every tracked text file is stored as LF in the repository and checked out
+#  with the platform's native endings. Keeps Windows and Linux checkouts of
+#  this project from producing whole-file diffs against each other.
+# ============================================================================
+
+* text=auto
+
+# Source and config
+*.cpp        text diff=cpp
+*.h          text diff=cpp
+*.hpp        text diff=cpp
+*.inl        text diff=cpp
+*.cs         text diff=csharp
+*.ini        text
+*.json       text
+*.md         text
+*.uproject   text eol=lf
+*.uplugin    text eol=lf
+*.gitignore  text eol=lf
+*.gitattributes text eol=lf
+
+# Scripts must keep the endings their interpreter expects
+*.sh         text eol=lf
+*.command    text eol=lf
+*.bat        text eol=crlf
+*.cmd        text eol=crlf
+*.ps1        text eol=crlf
+
+# ============================================================================
+#  Unreal binary assets — never normalized, never diffed, never auto-merged
+# ============================================================================
+
+*.uasset     binary
+*.umap       binary
+*.upk        binary
+*.udk        binary
+*.ubulk      binary
+*.uexp       binary
+
+# Media and fonts
+*.png        binary
+*.jpg        binary
+*.jpeg       binary
+*.gif        binary
+*.tga        binary
+*.bmp        binary
+*.psd        binary
+*.ico        binary
+*.wav        binary
+*.mp3        binary
+*.ogg        binary
+*.fbx        binary
+*.ttf        binary
+*.otf        binary
+
+# Compiled output
+*.dll        binary
+*.so         binary
+*.dylib      binary
+*.lib        binary
+*.a          binary
+*.exe        binary
+*.pdb        binary
