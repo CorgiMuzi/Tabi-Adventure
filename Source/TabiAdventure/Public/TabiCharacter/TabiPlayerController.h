@@ -14,12 +14,12 @@ class TABIADVENTURE_API ATabiPlayerController : public APlayerController
 	GENERATED_BODY()
 public:
 	void CreatePlayerHUD();
+	
+	void ShowInteractPrompt(TSubclassOf<UUserWidget> InWidgetClass);
+	void HideInteractPrompt();
 
 	UPROPERTY(EditDefaultsOnly, Category="Tabi|UI")
 	TSubclassOf<UTabiPlayerHUD> PlayerHUDClass;
-
-	UPROPERTY()
-	TObjectPtr<UTabiPlayerHUD> CurrentHUD;
 
 protected:
 	virtual void OnPossess(APawn* InPawn) override;
@@ -27,4 +27,10 @@ protected:
 
 	UFUNCTION()
 	void HandleCharacterDead();
+	
+	UPROPERTY()
+	TObjectPtr<UTabiPlayerHUD> CurrentHUD;
+	
+	UPROPERTY()
+	TObjectPtr<UUserWidget> CurrentInteractPrompt;
 };

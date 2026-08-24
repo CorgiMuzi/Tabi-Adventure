@@ -1,7 +1,7 @@
 ﻿// Copyright (c) 2026 CorgiMuzi. All Rights Reserved.
 
 
-#include "TabiInteractor/TabiGoalTrigger.h"
+#include "TabiActor/TabiGoalTrigger.h"
 #include "Components/BoxComponent.h"
 #include "TabiCharacter/TabiPlayerCharacter.h"
 #include "TabiGameFramework/TabiAdventureGameModeBase.h"

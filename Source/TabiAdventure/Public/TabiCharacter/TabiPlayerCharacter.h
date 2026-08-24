@@ -38,6 +38,9 @@ public:
 	virtual void HandleDeathAnimEnd() override;
 	//~ End ATabiCharacterBase
 
+	UFUNCTION()
+	void Interact();
+
 	//~ Enhanced Input
 	void SetGameplayInputEnabled(bool bIsEnabled);
 	//~ End Enhanced Input
@@ -68,6 +71,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category= "Tabi|Input")
 	TObjectPtr<UInputAction> AttackAction;
+
+	UPROPERTY(EditDefaultsOnly, Category= "Tabi|Input")
+	TObjectPtr<UInputAction> InteractAction;
 	//~ End Player Input
 
 	//~ Combat

@@ -6,6 +6,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
+#include "Components/CapsuleComponent.h"
 
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
@@ -13,6 +14,7 @@
 #include "TabiAnimation/TabiAnimInstance.h"
 
 #include "TabiComponent/TabiCombatComponent.h"
+#include "TabiInteractor/TabiInteractor.h"
 
 ATabiPlayerCharacter::ATabiPlayerCharacter(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
@@ -43,6 +45,7 @@ void ATabiPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 	EnhancedInput->BindAction(JumpAction, ETriggerEvent::Started, this, &ThisClass::Jump);
 	EnhancedInput->BindAction(DodgeAction, ETriggerEvent::Started, this, &ThisClass::Dodge);
 	EnhancedInput->BindAction(AttackAction, ETriggerEvent::Triggered, this, &ThisClass::HandleAttackInput);
+	EnhancedInput->BindAction(InteractAction, ETriggerEvent::Started, this, &ThisClass::Interact);
 }
 
 void ATabiPlayerCharacter::BeginPlay()
@@ -82,6 +85,21 @@ void ATabiPlayerCharacter::Move(const FInputActionValue& Value)
 void ATabiPlayerCharacter::HandleAttackInput()
 {
 	RequestAttack();
+}
+
+void ATabiPlayerCharacter::Interact()
+{
+	TArray<AActor*> OverlappingActors;
+	GetCapsuleComponent()->GetOverlappingActors(OverlappingActors);
+
+	for (AActor* OverlappingActor : OverlappingActors)
+	{
+		if (ITabiInteractor* Interactor = Cast<ITabiInteractor>(OverlappingActor))
+		{
+			Interactor->Interact(this);
+			break;
+		}
+	}
 }
 
 void ATabiPlayerCharacter::HandleDeathAnimEnd()

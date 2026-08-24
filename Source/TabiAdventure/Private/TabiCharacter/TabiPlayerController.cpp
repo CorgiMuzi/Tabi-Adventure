@@ -58,3 +58,24 @@ void ATabiPlayerController::CreatePlayerHUD()
 	CurrentHUD->AddToViewport();
 	CurrentHUD->SetOwningVital(PlayerCharacter->GetVitalComponent());
 }
+
+void ATabiPlayerController::ShowInteractPrompt(TSubclassOf<UUserWidget> InWidgetClass)
+{
+	if (!InWidgetClass) return;
+
+	HideInteractPrompt();
+
+	CurrentInteractPrompt = CreateWidget<UUserWidget>(this, InWidgetClass);
+	if (CurrentInteractPrompt)
+	{
+		CurrentInteractPrompt->AddToViewport();
+	}
+}
+
+void ATabiPlayerController::HideInteractPrompt()
+{
+	if (!CurrentInteractPrompt) return;
+
+	CurrentInteractPrompt->RemoveFromParent();
+	CurrentInteractPrompt = nullptr;
+}
