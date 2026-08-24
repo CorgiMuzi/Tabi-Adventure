@@ -21,7 +21,7 @@ class TABIADVENTURE_API ITabiInteractor
 	GENERATED_BODY()
 
 public:
-	virtual void ShowInteractInfo(AActor* Instigator);
+	virtual void ShowInteractInfo(AActor* Interactor);
 	virtual void HideInteractInfo(AActor* Instigator);
 	virtual void Interact(AActor* Instigator);
 };

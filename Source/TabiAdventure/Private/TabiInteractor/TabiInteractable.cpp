@@ -4,6 +4,6 @@
 #include "TabiInteractor/TabiInteractor.h"
 
 
-void ITabiInteractor::ShowInteractInfo(AActor* Instigator){}
+void ITabiInteractor::ShowInteractInfo(AActor* Interactor){}
 void ITabiInteractor::HideInteractInfo(AActor* Instigator){}
 void ITabiInteractor::Interact(AActor* Instigator) {}
