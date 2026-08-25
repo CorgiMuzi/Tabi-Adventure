@@ -1,9 +1,9 @@
 // Copyright (c) 2026 CorgiMuzi. All Rights Reserved.
 
 
-#include "TabiInteractor/TabiInteractor.h"
+#include "TabiInteractor/TabiInteractable.h"
 
 
-void ITabiInteractor::ShowInteractInfo(AActor* Interactor){}
-void ITabiInteractor::HideInteractInfo(AActor* Instigator){}
-void ITabiInteractor::Interact(AActor* Instigator) {}
+void ITabiInteractable::ShowInteractInfo(APawn* Interactor){}
+void ITabiInteractable::HideInteractInfo(APawn* Instigator){}
+void ITabiInteractable::Interact(APawn* Interactor) {}

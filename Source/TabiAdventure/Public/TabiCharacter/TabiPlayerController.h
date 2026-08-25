@@ -15,8 +15,8 @@ class TABIADVENTURE_API ATabiPlayerController : public APlayerController
 public:
 	void CreatePlayerHUD();
 	
-	void ShowInteractPrompt(TSubclassOf<UUserWidget> InWidgetClass);
-	void HideInteractPrompt();
+	UUserWidget* AddWidgetToViewport(TSubclassOf<UUserWidget> InWidgetClass);
+	void RemoveWidgetFromViewport(UUserWidget* InWidget);
 
 	UPROPERTY(EditDefaultsOnly, Category="Tabi|UI")
 	TSubclassOf<UTabiPlayerHUD> PlayerHUDClass;
@@ -30,7 +30,4 @@ protected:
 	
 	UPROPERTY()
 	TObjectPtr<UTabiPlayerHUD> CurrentHUD;
-	
-	UPROPERTY()
-	TObjectPtr<UUserWidget> CurrentInteractPrompt;
 };

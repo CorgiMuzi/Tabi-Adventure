@@ -14,7 +14,7 @@
 #include "TabiAnimation/TabiAnimInstance.h"
 
 #include "TabiComponent/TabiCombatComponent.h"
-#include "TabiInteractor/TabiInteractor.h"
+#include "TabiInteractor/TabiInteractable.h"
 
 ATabiPlayerCharacter::ATabiPlayerCharacter(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
@@ -94,7 +94,7 @@ void ATabiPlayerCharacter::Interact()
 
 	for (AActor* OverlappingActor : OverlappingActors)
 	{
-		if (ITabiInteractor* Interactor = Cast<ITabiInteractor>(OverlappingActor))
+		if (ITabiInteractable* Interactor = Cast<ITabiInteractable>(OverlappingActor))
 		{
 			Interactor->Interact(this);
 			break;

@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "TabiInteractor.h"
+#include "TabiInteractable.h"
 #include "GameFramework/Actor.h"
 #include "TabiTeleporter.generated.h"
 
@@ -12,16 +12,18 @@ class ATabiPlayerCharacter;
 class UUserWidget;
 
 UCLASS()
-class TABIADVENTURE_API ATabiTeleporter : public AActor, public ITabiInteractor
+class TABIADVENTURE_API ATabiTeleporter : public AActor, public ITabiInteractable
 {
 	GENERATED_BODY()
 
 public:
 	ATabiTeleporter();
 
-	virtual void Interact(AActor* Instigator) override;
-	virtual void ShowInteractInfo(AActor* Instigator) override;
-	virtual void HideInteractInfo(AActor* Instigator) override;
+	//~ ITabiInteractable
+	virtual void Interact(APawn* Interactor) override;
+	virtual void ShowInteractInfo(APawn* Interactor) override;
+	virtual void HideInteractInfo(APawn* Interactor) override;
+	//~ End ITabiInteractable
 
 protected:
 	UFUNCTION()
@@ -53,6 +55,7 @@ protected:
 
 private:
 	TWeakObjectPtr<ATabiPlayerCharacter> ActorToTeleport;
+	TWeakObjectPtr<UUserWidget> InteractPromptWidget;
 
 	FTimerHandle FadeOutTimerHandle;
 	FTimerHandle FadeInTimerHandle;

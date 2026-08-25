@@ -8,6 +8,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "TabiCharacter/TabiPlayerCharacter.h"
 #include "TabiCharacter/TabiPlayerController.h"
+#include "Blueprint/UserWidget.h"
 
 ATabiTeleporter::ATabiTeleporter()
 {
@@ -36,31 +37,29 @@ void ATabiTeleporter::OnInteractBoundaryOverlapEnd(UPrimitiveComponent* Overlapp
 	HideInteractInfo(PlayerCharacter);
 }
 
-void ATabiTeleporter::ShowInteractInfo(AActor* Instigator)
+void ATabiTeleporter::ShowInteractInfo(APawn* Interactor)
 {
-	ATabiPlayerCharacter* PlayerCharacter = Cast<ATabiPlayerCharacter>(Instigator);
-	if (!PlayerCharacter) return;
-
-	if (ATabiPlayerController* PlayerController = PlayerCharacter->GetController<ATabiPlayerController>())
+	if (!Interactor) return;
+	
+	if (ATabiPlayerController* PlayerController = Interactor->GetController<ATabiPlayerController>())
 	{
-		PlayerController->ShowInteractPrompt(InteractPromptWidgetClass);
+		InteractPromptWidget = PlayerController->AddWidgetToViewport(InteractPromptWidgetClass);
 	}
 }
 
-void ATabiTeleporter::HideInteractInfo(AActor* Instigator)
+void ATabiTeleporter::HideInteractInfo(APawn* Interactor)
 {
-	ATabiPlayerCharacter* PlayerCharacter = Cast<ATabiPlayerCharacter>(Instigator);
-	if (!PlayerCharacter) return;
-
-	if (ATabiPlayerController* PlayerController = PlayerCharacter->GetController<ATabiPlayerController>())
+	if (!Interactor) return;
+	
+	if (ATabiPlayerController* PlayerController = Interactor->GetController<ATabiPlayerController>())
 	{
-		PlayerController->HideInteractPrompt();
+		PlayerController->RemoveWidgetFromViewport(InteractPromptWidget.Get());
 	}
 }
 
-void ATabiTeleporter::Interact(AActor* Instigator)
+void ATabiTeleporter::Interact(APawn* Interactor)
 {
-	ATabiPlayerCharacter* PlayerCharacter = Cast<ATabiPlayerCharacter>(Instigator);
+	ATabiPlayerCharacter* PlayerCharacter = Cast<ATabiPlayerCharacter>(Interactor);
 	if (!PlayerCharacter || !Destination) return;
 
 	APlayerController* PlayerController = PlayerCharacter->GetController<APlayerController>();

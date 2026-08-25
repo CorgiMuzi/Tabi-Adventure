@@ -4,11 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
-#include "TabiInteractor.generated.h"
+#include "TabiInteractable.generated.h"
 
 // This class does not need to be modified.
 UINTERFACE()
-class UTabiInteractor : public UInterface
+class UTabiInteractable : public UInterface
 {
 	GENERATED_BODY()
 };
@@ -16,12 +16,12 @@ class UTabiInteractor : public UInterface
 /**
  * 
  */
-class TABIADVENTURE_API ITabiInteractor
+class TABIADVENTURE_API ITabiInteractable
 {
 	GENERATED_BODY()
 
 public:
-	virtual void ShowInteractInfo(AActor* Interactor);
-	virtual void HideInteractInfo(AActor* Instigator);
-	virtual void Interact(AActor* Instigator);
+	virtual void ShowInteractInfo(APawn* Interactor);
+	virtual void HideInteractInfo(APawn* Instigator);
+	virtual void Interact(APawn* Interactor);	
 };
