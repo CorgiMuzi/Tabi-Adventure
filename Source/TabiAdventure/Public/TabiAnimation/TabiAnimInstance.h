@@ -8,6 +8,7 @@
 
 class ATabiCharacterBase;
 class UCharacterMovementComponent;
+class UNiagaraComponent;
 
 class UTabiAttackDefinition;
 
@@ -28,6 +29,9 @@ public:
 
 	void RegisterLoopSound(const UPaperZDAnimNotify_Base* NotifyKey, UAudioComponent* Audio);
 	void StopLoopSound(const UPaperZDAnimNotify_Base* NotifyKey, const float FadeOutDuration);
+
+	void RegisterLoopParticle(const UPaperZDAnimNotify_Base* NotifyKey, UNiagaraComponent* Particle);
+	void StopLoopParticle(const UPaperZDAnimNotify_Base* NotifyKey);
 
 	/// Play attack animation
 	/// @param AttackAnimSequence
@@ -60,6 +64,9 @@ private:
 
 	UPROPERTY(Transient)
 	TMap<TObjectPtr<const UPaperZDAnimNotify_Base>, TObjectPtr<UAudioComponent>> ActiveLoopSounds;
+
+	UPROPERTY(Transient)
+	TMap<TObjectPtr<const UPaperZDAnimNotify_Base>, TObjectPtr<UNiagaraComponent>> ActiveLoopParticles;
 
 public:
 	inline void SetSpeed(const float NewSpeed) { Speed = NewSpeed; }

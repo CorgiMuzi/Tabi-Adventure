@@ -10,6 +10,7 @@
 #include "TabiComponent/TabiVitalComponent.h"
 #include "TabiComponent/TabiStatComponent.h"
 #include "TabiComponent/TabiCombatComponent.h"
+#include "TabiComponent/TabiCombatVFXComponent.h"
 
 #include "TabiAnimation/TabiAnimInstance.h"
 
@@ -50,6 +51,7 @@ ATabiCharacterBase::ATabiCharacterBase(const FObjectInitializer& ObjectInitializ
 	VitalComponent->OnTabiVitalDepleted.AddDynamic(this, &ThisClass::OnCharacterDead);
 	StatComponent = CreateDefaultSubobject<UTabiStatComponent>(TEXT("StatComponent"));
 	CombatComponent = CreateDefaultSubobject<UTabiCombatComponent>(TabiCombatComponentName);
+	CombatVFXComponent = CreateDefaultSubobject<UTabiCombatVFXComponent>(TEXT("CombatVFXComponent"));
 
 	PerceptionStimuliSource = CreateDefaultSubobject<UAIPerceptionStimuliSourceComponent>(TEXT("PerceptionStimulSource"));
 	PerceptionStimuliSource->RegisterForSense(UAISense_Sight::StaticClass());
@@ -196,36 +198,34 @@ bool ATabiCharacterBase::CanAttack() const
 		CurrentState != ETabiCharacterState::Stunned;
 }
 
-bool ATabiCharacterBase::ReceiveDamage(const UTabiAttackDefinition* AttackDefinition, const AActor* DamageCauser)
+ETabiHitResult ATabiCharacterBase::ReceiveDamage(const UTabiAttackDefinition* AttackDefinition, const AActor* DamageCauser)
 {
-	// Return false when the character is not vulnerable
-	if (!CombatComponent->IsVulnerable()) return false;
-	// Return when failed to dealing damage.
-	if (!VitalComponent->ModifyCurrentValue(ETabiVitalType::HP, -AttackDefinition->GetDamage())) return false;
+	if (!AttackDefinition || !CombatComponent || !VitalComponent) return ETabiHitResult::None;
+
+	if (!CombatComponent->IsVulnerable()) return ETabiHitResult::Evaded;
+
+	if (!VitalComponent->ModifyCurrentValue(ETabiVitalType::HP, -AttackDefinition->GetDamage())) return ETabiHitResult::Ignored;
 	UE_LOG(LogTemp, Warning, TEXT("HP: %f"), VitalComponent->GetCurrentValueByType(ETabiVitalType::HP));
-	// Don't play hit reaction animations when character is dead.
-	if (CurrentState == ETabiCharacterState::Dead) return false;
 
-	if (CombatComponent)
+	if (CurrentState == ETabiCharacterState::Dead) return ETabiHitResult::Ignored;
+
+	CombatComponent->OnCharacterDamaged(AttackDefinition, this, DamageCauser);
+
+	if (DamageCauser)
 	{
-		CombatComponent->OnCharacterDamaged(AttackDefinition, this, DamageCauser);
+		FVector KnockbackDir = GetActorLocation() - DamageCauser->GetActorLocation();
+		KnockbackDir.Z = 0.f;
+		KnockbackDir.Y = 0.f;
 
-		if (DamageCauser)
-		{
-			FVector KnockbackDir = GetActorLocation() - DamageCauser->GetActorLocation();
-			KnockbackDir.Z = 0.f;
-			KnockbackDir.Y = 0.f;
+		KnockbackDir = KnockbackDir.GetSafeNormal();
 
-			KnockbackDir = KnockbackDir.GetSafeNormal();
+		FVector KnockbackVelocity = KnockbackDir * (AttackDefinition->GetKnockbackStrength() - StatComponent->GetStatCurrentValue(ETabiStatType::Resistance));
+		KnockbackVelocity.Z = AttackDefinition->GetKnockbackLiftSpeed();
 
-			FVector KnockbackVelocity = KnockbackDir * (AttackDefinition->GetKnockbackStrength() - StatComponent->GetStatCurrentValue(ETabiStatType::Resistance));
-			KnockbackVelocity.Z = AttackDefinition->GetKnockbackLiftSpeed();
-
-			LaunchCharacter(KnockbackVelocity, true, true);
-		}
+		LaunchCharacter(KnockbackVelocity, true, true);
 	}
 
-	return true;
+	return ETabiHitResult::Damaged;
 }
 
 bool ATabiCharacterBase::CanDodge() const
@@ -492,6 +492,7 @@ void ATabiCharacterBase::OnCharacterStateChanged(ETabiCharacterState OldState, E
 
 		case ETabiCharacterState::Stunned:
 			if (CombatComponent) CombatComponent->SetVulnerability(false);
+			break;
 
 		default: break;
 	}

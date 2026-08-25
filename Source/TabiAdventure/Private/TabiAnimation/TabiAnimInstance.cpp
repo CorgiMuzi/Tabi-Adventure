@@ -4,6 +4,7 @@
 #include "TabiAnimation/TabiAnimInstance.h"
 
 #include "Components/AudioComponent.h"
+#include "NiagaraComponent.h"
 #include "TabiData/TabiAttackDefinition.h"
 
 UTabiAnimInstance::UTabiAnimInstance()
@@ -35,6 +36,23 @@ void UTabiAnimInstance::StopLoopSound(const UPaperZDAnimNotify_Base* NotifyKey, 
 	TObjectPtr<UAudioComponent> AudioToRemove;
 	ActiveLoopSounds.RemoveAndCopyValue(NotifyKey, AudioToRemove);
 	if (AudioToRemove) FadeOutDuration > 0.f ? AudioToRemove->FadeOut(FadeOutDuration, 0.f) : AudioToRemove->Stop();
+}
+
+void UTabiAnimInstance::RegisterLoopParticle(const UPaperZDAnimNotify_Base* NotifyKey, UNiagaraComponent* Particle)
+{
+	if (auto ExistParticle = ActiveLoopParticles.Find(NotifyKey))
+	{
+		if (*ExistParticle) (*ExistParticle)->Deactivate();
+	}
+
+	ActiveLoopParticles.Add(NotifyKey, Particle);
+}
+
+void UTabiAnimInstance::StopLoopParticle(const UPaperZDAnimNotify_Base* NotifyKey)
+{
+	TObjectPtr<UNiagaraComponent> ParticleToRemove;
+	ActiveLoopParticles.RemoveAndCopyValue(NotifyKey, ParticleToRemove);
+	if (ParticleToRemove) ParticleToRemove->Deactivate();
 }
 
 bool UTabiAnimInstance::PlayAttackAnimation(const UPaperZDAnimSequence* AttackAnimSequence)

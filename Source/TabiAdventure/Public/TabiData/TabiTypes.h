@@ -1,5 +1,29 @@
 ﻿#pragma once
 
+#include "CoreMinimal.h"
+
+class AActor;
+class UTabiAttackDefinition;
+
+enum class ETabiHitResult : uint8
+{
+	None,
+	Damaged,
+	Evaded,
+	Ignored
+};
+
+struct FTabiHitEvent
+{
+	ETabiHitResult Result = ETabiHitResult::None;
+	const UTabiAttackDefinition* AttackDefinition = nullptr;
+	AActor* Attacker = nullptr;
+	AActor* Victim = nullptr;
+	FVector Location = FVector::ZeroVector;
+	FRotator Rotation = FRotator::ZeroRotator;
+	bool bFirstConfirmedHit = false;
+};
+
 struct FTabiRequestID
 {
 private:

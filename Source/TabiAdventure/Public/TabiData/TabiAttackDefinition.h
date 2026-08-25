@@ -7,6 +7,8 @@
 #include "Engine/DataAsset.h"
 #include "TabiAttackDefinition.generated.h"
 
+class UNiagaraSystem;
+
 
 UCLASS()
 class TABIADVENTURE_API UTabiAttackDefinition : public UPrimaryDataAsset
@@ -19,6 +21,8 @@ public:
 	inline float GetKnockbackStrength() const { return KnockbackStrength; }
 	inline float GetKnockbackLiftSpeed() const { return KnockbackLiftSpeed; }
 	inline float GetHitStunDuration() const { return HitStunDuration; }
+	inline UNiagaraSystem* GetHitEffect() const { return HitEffect; }
+	inline FVector GetHitEffectScale() const { return HitEffectScale; }
 
 protected:
 	UPROPERTY(EditAnywhere, Category="Tabi|Animation")
@@ -38,4 +42,10 @@ protected:
 	// The base value how long the target should be stunned.
 	UPROPERTY(EditAnywhere, Category="Tabi|Attack", meta=(ClampMin="0.1"))
 	float HitStunDuration;
+
+	UPROPERTY(EditAnywhere, Category="Tabi|Effect")
+	TObjectPtr<UNiagaraSystem> HitEffect;
+
+	UPROPERTY(EditAnywhere, Category="Tabi|Effect")
+	FVector HitEffectScale{FVector::OneVector};
 };

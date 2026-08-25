@@ -14,6 +14,7 @@ class ATabiCharacterBase;
 class UBoxComponent;
 
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnTabiAttackEndSignature, const FTabiRequestID /*RequestID*/,bool /*bSuccess*/);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnTabiHitConfirmedSignature, const FTabiHitEvent& /*HitEvent*/);
 
 UCLASS(ClassGroup=(Tabi), meta=(BlueprintSpawnableComponent))
 class TABIADVENTURE_API UTabiCombatComponent : public UActorComponent
@@ -27,7 +28,7 @@ public:
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 
 	virtual FTabiRequestID TryBeginAttack();
-	virtual bool Attack(ATabiCharacterBase* Target/*, const UTabiAttackDefinition* AttackDefinition*/);
+	virtual ETabiHitResult Attack(ATabiCharacterBase* Target/*, const UTabiAttackDefinition* AttackDefinition*/);
 
 	UFUNCTION()
 	void FinishAttack(bool IsCompleted);
@@ -55,6 +56,7 @@ public:
 	inline void StoreRequestID() { CurrentRequestID = GetNextRequestID(); }
 
 	FOnTabiAttackEndSignature OnTabiAttackEnd;
+	FOnTabiHitConfirmedSignature OnTabiHitConfirmed;
 protected:
 	//~ Animation
 	UPROPERTY()
@@ -71,6 +73,9 @@ protected:
 	virtual void OnHitboxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
 
 	void SetupHitbox(ATabiCharacterBase* Owner);
+
+	FVector ComputeHitLocation(const AActor* Target, const UPrimitiveComponent* TargetComp) const;
+	FRotator ComputeHitRotation(const AActor* Target) const;
 
 	UPROPERTY()
 	TObjectPtr<UBoxComponent> Hitbox;
@@ -103,6 +108,7 @@ protected:
 private:
 	static uint32 NextRequestID;
 	FTabiRequestID CurrentRequestID;
+	FTabiRequestID FirstHitRequestID;
 
 	//~ Stunning
 	FTimerHandle StunEffectBlinkTimerHandle;

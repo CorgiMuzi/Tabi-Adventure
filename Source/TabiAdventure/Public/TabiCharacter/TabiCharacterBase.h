@@ -16,6 +16,7 @@ class UAIPerceptionStimuliSourceComponent;
 class UAIPerceptionComponent;
 class UTabiAnimInstance;
 class UTabiCombatComponent;
+class UTabiCombatVFXComponent;
 class UTabiStatComponent;
 class UTabiVitalComponent;
 class UTabiAttackDefinition;
@@ -87,13 +88,14 @@ public:
 	 * Apply damage to this character.
 	 * @param AttackDefinition Attack skill contenxt.
 	 * @param DamageCauser Who make this attack definition and apply it.
-	 * @return	Whether successfully apply damage.
+	 * @return	How this character resolved the incoming attack.
 	 */
-	bool ReceiveDamage(const UTabiAttackDefinition* AttackDefinition = nullptr, const AActor* DamageCauser = nullptr);
+	ETabiHitResult ReceiveDamage(const UTabiAttackDefinition* AttackDefinition = nullptr, const AActor* DamageCauser = nullptr);
 
 	UBoxComponent* GetHitbox() const { return Hitbox; }
 	UBoxComponent* GetHurtbox() const { return Hurtbox; }
 	UTabiCombatComponent* GetCombatComponent() const { return CombatComponent; }
+	UTabiCombatVFXComponent* GetCombatVFXComponent() const { return CombatVFXComponent; }
 
 	void ApplyHitboxOffset(FVector HitboxOffset);
 	//~ End Combat
@@ -143,6 +145,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UTabiCombatComponent> CombatComponent;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UTabiCombatVFXComponent> CombatVFXComponent;
 
 	static FName TabiCombatComponentName;
 

@@ -143,11 +143,68 @@ void UTabiCombatComponent::OnHitboxBeginOverlap(UPrimitiveComponent* OverlappedC
 	// Do nothing if this character is not hostile to Target
 	if (Owner->GetTeamAttitudeTowards(*Target) != ETeamAttitude::Hostile) return;
 
-	if (!AlreadyHitCharacters.Contains(Target))
+	if (AlreadyHitCharacters.Contains(Target)) return;
+	AlreadyHitCharacters.Add(Target);
+
+	FTabiHitEvent HitEvent;
+	HitEvent.AttackDefinition = CurrentAttack;
+	HitEvent.Attacker = Owner;
+	HitEvent.Victim = Target;
+	HitEvent.Location = ComputeHitLocation(Target, OtherComp);
+	HitEvent.Rotation = ComputeHitRotation(Target);
+	HitEvent.Result = Attack(Target);
+	HitEvent.bFirstConfirmedHit = HitEvent.Result == ETabiHitResult::Damaged
+		&& CurrentRequestID.IsValid()
+		&& !FirstHitRequestID.IsEquivalent(CurrentRequestID);
+
+	if (HitEvent.bFirstConfirmedHit)
 	{
-		AlreadyHitCharacters.Add(Target);
-		Attack(Target);
+		FirstHitRequestID = CurrentRequestID;
 	}
+
+	OnTabiHitConfirmed.Broadcast(HitEvent);
+}
+
+FVector UTabiCombatComponent::ComputeHitLocation(const AActor* Target, const UPrimitiveComponent* TargetComp) const
+{
+	const AActor* Owner = GetOwner();
+	const FVector HitboxCenter = Hitbox ? Hitbox->GetComponentLocation() : (Owner ? Owner->GetActorLocation() : FVector::ZeroVector);
+	if (!Target) return HitboxCenter;
+
+	FVector HitLocation = (HitboxCenter + Target->GetActorLocation()) * 0.5f;
+
+	if (TargetComp)
+	{
+		FVector ClosestPoint;
+		if (TargetComp->GetClosestPointOnCollision(HitboxCenter, ClosestPoint) >= 0.f)
+		{
+			HitLocation.X = ClosestPoint.X;
+			HitLocation.Y = ClosestPoint.Y;
+		}
+	}
+
+	return HitLocation;
+}
+
+FRotator UTabiCombatComponent::ComputeHitRotation(const AActor* Target) const
+{
+	const ATabiCharacterBase* Owner = GetOwner<ATabiCharacterBase>();
+
+	FVector Direction = FVector::ZeroVector;
+	if (Owner && Target)
+	{
+		Direction = Target->GetActorLocation() - Owner->GetActorLocation();
+		Direction.Y = 0.f;
+		Direction.Z = 0.f;
+	}
+
+	if (Direction.IsNearlyZero())
+	{
+		const bool bFacingRight = Owner ? Owner->IsFacingRight() : true;
+		Direction = FVector(bFacingRight ? 1.f : -1.f, 0.f, 0.f);
+	}
+
+	return Direction.GetSafeNormal().Rotation();
 }
 
 FTabiRequestID UTabiCombatComponent::TryBeginAttack()
@@ -174,9 +231,9 @@ const UTabiAttackDefinition* UTabiCombatComponent::SelectAttackDefinition()
 	return AttackDef;
 }
 
-bool UTabiCombatComponent::Attack(ATabiCharacterBase* Target)
+ETabiHitResult UTabiCombatComponent::Attack(ATabiCharacterBase* Target)
 {
-	if (!Target) return false;
+	if (!Target) return ETabiHitResult::None;
 	return Target->ReceiveDamage(CurrentAttack, GetOwner());
 }
 
