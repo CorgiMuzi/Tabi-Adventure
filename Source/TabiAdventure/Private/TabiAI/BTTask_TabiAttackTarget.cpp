@@ -28,12 +28,13 @@ EBTNodeResult::Type UBTTask_TabiAttackTarget::ExecuteTask(UBehaviorTreeComponent
 	UBlackboardComponent* BB = OwnerComp.GetBlackboardComponent();
 	if (!BB) return EBTNodeResult::Failed;
 
-	if (const AActor* Target = Cast<AActor>(BB->GetValueAsObject(TabiEnemyBlackboardKey::Target)))
+	const AActor* Target = Cast<AActor>(BB->GetValueAsObject(TabiEnemyBlackboardKey::Target));
+	if (Target)
 	{
 		OwnerCharacter->FaceToward(Target);
 	}
-
-	const FTabiRequestID AttackRequestID = OwnerCharacter->RequestAttack();
+	
+	const FTabiRequestID AttackRequestID = OwnerCharacter->RequestAttack(Target);
 	if (!AttackRequestID.IsValid()) return EBTNodeResult::Failed;
 
 	MyMemory->AttackRequestID = AttackRequestID;

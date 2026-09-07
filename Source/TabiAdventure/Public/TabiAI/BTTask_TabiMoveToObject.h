@@ -23,6 +23,15 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category="Tabi|AI")
 	FBlackboardKeySelector TargetKey;
 
-	UPROPERTY(EditAnywhere, Category="Tabi|AI")
-	float DistanceTolerance;
+	/**
+	 * Used only when the owner has no attack definition to derive a band from.
+	 * Normally the stop band comes from MinAttackRange / MaxAttackRange on the attack
+	 * definitions, so this node and the attack decorator can never disagree.
+	 */
+	UPROPERTY(EditAnywhere, Category="Tabi|AI", meta=(ClampMin="0"))
+	float FallbackStopDistance = 60.f;
+
+	/** Extra margin kept inside the attack band so the enemy does not stop right on the edge. */
+	UPROPERTY(EditAnywhere, Category="Tabi|AI", meta=(ClampMin="0"))
+	float BandMargin = 10.f;
 };

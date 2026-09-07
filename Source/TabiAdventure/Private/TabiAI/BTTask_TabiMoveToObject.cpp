@@ -42,14 +42,48 @@ void UBTTask_TabiMoveToObject::TickTask(UBehaviorTreeComponent& OwnerComp, uint8
 	const AActor* Target = Cast<AActor>(BB->GetValueAsObject(TargetKey.SelectedKeyName));
 	if (!Target) return FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
 
-	const FVector& TargetLocation = Target->GetActorLocation();
-	const float XDiff = TargetLocation.X - Owner->GetActorLocation().X;
-
-	if (FMath::Abs(XDiff) < DistanceTolerance) return FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
-
 	ATabiCharacterBase* OwnerCharacter = Cast<ATabiCharacterBase>(Owner);
 	if (!OwnerCharacter) return FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
 
-	OwnerCharacter->MoveAlongX(FMath::Sign(XDiff));
-	return FinishLatentTask(OwnerComp, EBTNodeResult::InProgress);
+	const FVector& TargetLocation = Target->GetActorLocation();
+	const float XDiff = TargetLocation.X - Owner->GetActorLocation().X;
+	const float Distance = FMath::Abs(XDiff);
+
+	float MinRange = 0.f;
+	float MaxRange = FallbackStopDistance;
+	if (!OwnerCharacter->GetAttackDistanceBand(Target, MinRange, MaxRange))
+	{
+		MinRange = 0.f;
+		MaxRange = FallbackStopDistance;
+	}
+	
+	float ApproachTarget = FMath::Clamp(MaxRange - BandMargin, MinRange, MaxRange);
+	float RetreatTarget = MinRange > 0.f ? FMath::Clamp(MinRange + BandMargin, MinRange, MaxRange) : 0.f;
+	
+	if (ApproachTarget < RetreatTarget)
+	{
+		const float Midpoint = (MinRange + MaxRange) * 0.5f;
+		ApproachTarget = Midpoint;
+		RetreatTarget = Midpoint;
+	}
+
+	// Direction toward the target. Sign() returns 0 when perfectly aligned, so fall back to the facing.
+	float TowardTarget = FMath::Sign(XDiff);
+	if (FMath::IsNearlyZero(TowardTarget)) TowardTarget = OwnerCharacter->IsFacingRight() ? 1.f : -1.f;
+
+	if (Distance > ApproachTarget)
+	{
+		OwnerCharacter->MoveAlongX(TowardTarget);
+		return;
+	}
+
+	if (MinRange > 0.f && Distance < RetreatTarget)
+	{
+		OwnerCharacter->MoveAlongX(-TowardTarget);
+		OwnerCharacter->FaceToward(Target);
+		return;
+	}
+	
+	OwnerCharacter->FaceToward(Target);
+	return FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
 }

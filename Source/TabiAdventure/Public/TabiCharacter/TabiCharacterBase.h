@@ -66,7 +66,7 @@ public:
 	bool SetCharacterState(ETabiCharacterState NewState);
 	FORCEINLINE ETabiCharacterState GetCharacterState() const { return CurrentState; }
 	bool CanMove() const;
-	inline bool IsAlive() const;
+	FORCEINLINE bool IsAlive() const { return CurrentState != ETabiCharacterState::Dead; }
 	//~ End Character State
 
 	//~ Helper functions to control the character sprite.
@@ -78,12 +78,25 @@ public:
 
 	//~ Vital
 	UTabiVitalComponent* GetVitalComponent() const { return VitalComponent;}
+	UTabiStatComponent* GetStatComponent() const { return StatComponent; }
 	//~ End Vital
 
 	//~ Combat
 	void StopAttack();
 	bool CanAttack() const;
-	virtual FTabiRequestID RequestAttack();
+	/**
+	 * @param Target Optional. When supplied, only attacks whose range rules accept this target are started.
+	 */
+	virtual FTabiRequestID RequestAttack(const AActor* Target = nullptr);
+
+	// Describes the situation against Target so the combat component can filter attacks.
+	FTabiAttackContext BuildAttackContext(const AActor* Target) const;
+
+	// True when at least one attack definition may be used against Target right now.
+	bool HasUsableAttackAgainst(const AActor* Target) const;
+
+	// Horizontal distance band this character wants to keep against Target in order to attack it.
+	bool GetAttackDistanceBand(const AActor* Target, float& OutMinRange, float& OutMaxRange) const;
 	/**
 	 * Apply damage to this character.
 	 * @param AttackDefinition Attack skill contenxt.
@@ -91,6 +104,8 @@ public:
 	 * @return	How this character resolved the incoming attack.
 	 */
 	ETabiHitResult ReceiveDamage(const UTabiAttackDefinition* AttackDefinition = nullptr, const AActor* DamageCauser = nullptr);
+	
+	void StartStunTimer(float BaseStunDuration, bool ShouldApplyStat = true);
 
 	UBoxComponent* GetHitbox() const { return Hitbox; }
 	UBoxComponent* GetHurtbox() const { return Hurtbox; }
@@ -116,6 +131,9 @@ public:
 	//~ AI Perception
 	const AActor* GetCurrentPlatform() const;
 	bool IsOnSamePlatformAs(const AActor* OtherActor) const;
+	// The threshold about the height difference between two platforms.
+	UPROPERTY(EditAnywhere)
+	float ElevationThershold = 0.1f;
 	//~ End AI Perception
 
 	/**
@@ -172,7 +190,6 @@ protected:
 	//~ Stamina
 	/**
 	 * Increase the stamina as Amount
-	 * !! Never decreased even passed the negative value as the amount. !!
 	 * @param DeltaTime How much stamina would be recovered.
 	 */
 	void TickStaminaRegen(const float DeltaTime);
@@ -183,22 +200,16 @@ protected:
 	 * @return Whether is successfully consume the stamina
 	 */
 	bool ConsumeStamina(const float Cost);
-
-	/**
-	 * When the stamina regeneration would be start
-	 */
+	
+    // When the stamina regeneration would be start
 	UPROPERTY(EditDefaultsOnly, Category="Tabi|Stamina")
 	float StaminaRegenResumeTime;
 
-	/**
-	 * How long the stamina regen would be delayed after consuming it.
-	 */
+	// How long the stamina regen would be delayed after consuming it.
 	UPROPERTY(EditDefaultsOnly, Category="Tabi|Stamina")
 	float StaminaRegenDelay = 0.1f;
 
-	/**
-	 * How much the stamina regen per seconds.
-	 */
+	// How much the stamina regen per seconds.
 	UPROPERTY(EditDefaultsOnly, Category="Tabi|Stamina")
 	float StaminaRegenRate = 1.f;
 	//~ End Stamina
@@ -219,9 +230,7 @@ protected:
 	UPROPERTY(EditAnywhere, Category="Tabi|Dodge")
 	float DodgeSpeed = 500.f;
 
-	/**
-	 * The ratio of speed reduction when trying to dodge in air.
-	 */
+	// The ratio of speed reduction when trying to dodge in air.
 	UPROPERTY(EditAnywhere, Category="Tabi|Dodge", meta=(ClampMin=0, ClampMax=1))
 	float AirDodgeSpeedScaler = 0.9f;
 
@@ -249,8 +258,6 @@ protected:
 	//~ End Character State
 
 	//~ Combat
-	void StartStunTimer(float BaseStunDuration, bool ShouldApplyStat = true);
-
 	UPROPERTY(VisibleAnywhere, Category="Tabi")
 	TObjectPtr<UBoxComponent> Hitbox;
 
@@ -273,6 +280,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category="Tabi|Animation")
 	UPaperZDAnimSequence* DeadAnimSequence;
+	
+	UPROPERTY(EditAnywhere, Category="Tabi|Animation")
+	UPaperZDAnimSequence* HitReactAnimSequence;
 
 	UPROPERTY(EditDefaultsOnly, Category="Tabi|Animation")
 	float DeathFallbackTime;

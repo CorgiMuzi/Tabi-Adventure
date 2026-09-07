@@ -24,6 +24,14 @@ struct FTabiHitEvent
 	bool bFirstConfirmedHit = false;
 };
 
+struct FTabiAttackContext
+{
+	const AActor* Target = nullptr;
+	bool bHasTarget = false;
+	float DistanceToTarget = 0.f;
+	bool bSamePlatform = false;
+};
+
 struct FTabiRequestID
 {
 private:
@@ -32,7 +40,9 @@ private:
 	uint32 RequestID;
 
 public:
-	explicit FTabiRequestID(uint32 RequestID = InvalidRequestID) : RequestID(RequestID) {}
+	explicit FTabiRequestID(uint32 RequestID = InvalidRequestID) : RequestID(RequestID)
+	{
+	}
 
 	inline bool IsEquivalent(uint32 OtherID) const
 	{

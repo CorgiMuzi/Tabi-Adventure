@@ -60,7 +60,7 @@ void UTabiStatComponent::SetStatBaseValue(ETabiStatType StatType, float NewValue
 	OnStatBaseValueChanged.Broadcast(StatType, NewValue, OldValue);
 }
 
-float UTabiStatComponent::GetStatCurrentValue(ETabiStatType StatType)
+float UTabiStatComponent::GetStatCurrentValue(ETabiStatType StatType) const
 {
 	return Stats[StatType].CurrentValue;
 }

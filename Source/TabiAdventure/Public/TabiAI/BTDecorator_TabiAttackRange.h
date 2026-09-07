@@ -14,8 +14,6 @@ class TABIADVENTURE_API UBTDecorator_TabiAttackRange : public UBTDecorator
 public:
 	UBTDecorator_TabiAttackRange();
 
-	virtual void PostLoad() override;
-
 protected:
 	virtual bool CalculateRawConditionValue(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) const override;
 	virtual void TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds) override;

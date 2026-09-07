@@ -5,6 +5,7 @@
 
 #include "TabiAnimation/TabiAnimInstance.h"
 #include "TabiCharacter/TabiCharacterBase.h"
+#include "TabiComponent/TabiStatComponent.h"
 #include "TabiData/TabiAttackDefinition.h"
 #include "Components/BoxComponent.h"
 
@@ -33,10 +34,12 @@ void UTabiCombatComponent::BeginPlay()
 	}
 }
 
+#if WITH_EDITOR
 void UTabiCombatComponent::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 }
+#endif
 
 void UTabiCombatComponent::SetupHitbox(ATabiCharacterBase* Owner)
 {
@@ -67,69 +70,84 @@ void UTabiCombatComponent::DisableHitCollision()
 	if (Hitbox) Hitbox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
+bool UTabiCombatComponent::ApplyPoiseDamage(const float PoiseDamage)
+{
+	const ATabiCharacterBase* Owner = GetOwner<ATabiCharacterBase>();
+	const UTabiStatComponent* StatComponent = Owner ? Owner->GetStatComponent() : nullptr;
+	const float PoiseThreshold = StatComponent ? StatComponent->GetStatCurrentValue(ETabiStatType::Resistance) : 0.f;
+
+	// Resistance 0 keeps the old behaviour: every hit staggers.
+	if (PoiseThreshold <= 0.f) return true;
+
+	const UWorld* World = GetWorld();
+	const float Now = World ? World->GetTimeSeconds() : 0.f;
+
+	if (Now - LastPoiseDamageTime > PoiseResetDelay) AccumulatedPoiseDamage = 0.f;
+	LastPoiseDamageTime = Now;
+
+	AccumulatedPoiseDamage += FMath::Max(PoiseDamage, 0.f);
+	if (AccumulatedPoiseDamage < PoiseThreshold) return false;
+
+	AccumulatedPoiseDamage = 0.f;
+	return true;
+}
+
 void UTabiCombatComponent::OnCharacterDamaged(const UTabiAttackDefinition* AttackDefinition, AActor* DamagedActor, const AActor* DamageCauser)
 {
 	StopAttack();
 
 	if (!DamagedActor) return;
 
-	if (ATabiCharacterBase* DamagedCharacter = Cast<ATabiCharacterBase>(DamagedActor))
-	{
-		DamagedCharacter->SetCharacterState(ETabiCharacterState::Stunned);
-	}
+	ATabiCharacterBase* DamagedCharacter = Cast<ATabiCharacterBase>(DamagedActor);
+	if (!DamagedCharacter) return;
 
+	DamagedCharacter->SetCharacterState(ETabiCharacterState::Stunned);
+
+	// The stun clock belongs to the character that is stunned, not to the component that
+	// observed the hit, so the duration rule and the timer stay together on ATabiCharacterBase.
 	if (AttackDefinition)
 	{
-		StartStunTimer(DamagedActor, AttackDefinition->GetHitStunDuration());
+		DamagedCharacter->StartStunTimer(AttackDefinition->GetHitStunDuration());
 	}
 }
 
-void UTabiCombatComponent::StartStunTimer(AActor* StunnedActor, const float BaseStunDuration, const bool ShouldApplyStat)
+void UTabiCombatComponent::StartHitFlash()
 {
-	const float FinalStunDuration = BaseStunDuration;
-	if (ShouldApplyStat)
+	StartHitBlink(HitFlashDuration);
+}
+
+void UTabiCombatComponent::StartHitBlink(const float Duration)
+{
+	UWorld* World = GetWorld();
+	ATabiCharacterBase* Owner = GetOwner<ATabiCharacterBase>();
+	if (!World || !Owner || Duration <= 0.f) return;
+
+	TWeakObjectPtr<UTabiCombatComponent> WeakThis(this);
+	TWeakObjectPtr<ATabiCharacterBase> WeakOwner(Owner);
+	
+	Owner->SetSpriteColor(FLinearColor::Red);
+	bFlashFlag = true;
+
+	World->GetTimerManager().SetTimer(HitFlashIntervalTimerHandle, [WeakThis, WeakOwner]()
 	{
-		/**
-		 * Calculate final stun duration when stat should be applied.
-		 */
-	}
+		if (!WeakThis.IsValid() || !WeakOwner.IsValid()) return;
 
-	if (FinalStunDuration <= 0.f) return;
+		WeakOwner->SetSpriteColor(WeakThis->bFlashFlag ? FLinearColor::Red : FLinearColor::White);
+		WeakThis->bFlashFlag = !WeakThis->bFlashFlag;
+	}, HitFlashInterval, true);
 
-	if (UWorld* World = GetWorld())
+	World->GetTimerManager().SetTimer(HitFlashDurationTimerHandle, [WeakThis, WeakOwner]()
 	{
-		TWeakObjectPtr<UTabiCombatComponent> WeakThis(this);
+		if (!WeakThis.IsValid()) return;
 
-		// Start shaking and blinking effect on the stunned character
-		World->GetTimerManager().SetTimer(StunActivationTimerHandle, [WeakThis, StunnedActor]()
+		if (const UWorld* InWorld = WeakThis->GetWorld())
 		{
-			if (!WeakThis.IsValid()) return;
-			const UWorld* InWorld = WeakThis->GetWorld();
-			if (!InWorld) return;
-			InWorld->GetTimerManager().ClearTimer(WeakThis->StunEffectBlinkTimerHandle);
+			InWorld->GetTimerManager().ClearTimer(WeakThis->HitFlashIntervalTimerHandle);
+		}
 
-			if (ATabiCharacterBase* StunnedCharacter = Cast<ATabiCharacterBase>(StunnedActor))
-			{
-				// Reset sprite color
-				StunnedCharacter->SetSpriteColor(FLinearColor::White);
-				WeakThis->bBlinkFlag = true;
-
-				// Finish stunned state
-				StunnedCharacter->SetCharacterState(ETabiCharacterState::Idling);
-			}
-		}, FinalStunDuration, false);
-
-		// Blink character
-		World->GetTimerManager().SetTimer(StunEffectBlinkTimerHandle, [WeakThis, StunnedActor]()
-		{
-			if (!WeakThis.IsValid() || StunnedActor == nullptr) return;
-			ATabiCharacterBase* StunnedCharacter = Cast<ATabiCharacterBase>(StunnedActor);
-			if (!StunnedCharacter) return;
-			FLinearColor SpriteColor = WeakThis->bBlinkFlag ? FLinearColor::Red : FLinearColor::White;
-			StunnedCharacter->SetSpriteColor(SpriteColor);
-			WeakThis->bBlinkFlag = !WeakThis->bBlinkFlag;
-		}, StunEffectBlinkPeriod, true);
-	}
+		WeakThis->bFlashFlag = false;
+		if (WeakOwner.IsValid()) WeakOwner->SetSpriteColor(FLinearColor::White);
+	}, Duration, false);
 }
 
 void UTabiCombatComponent::OnHitboxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -207,9 +225,9 @@ FRotator UTabiCombatComponent::ComputeHitRotation(const AActor* Target) const
 	return Direction.GetSafeNormal().Rotation();
 }
 
-FTabiRequestID UTabiCombatComponent::TryBeginAttack()
+FTabiRequestID UTabiCombatComponent::TryBeginAttack(const FTabiAttackContext& Context)
 {
-	const UTabiAttackDefinition* AttackDef = SelectAttackDefinition();
+	const UTabiAttackDefinition* AttackDef = SelectAttackDefinition(Context);
 	if (AttackDef == nullptr) return FTabiRequestID(0);
 
 	if (!AnimInstance.IsValid()) return FTabiRequestID(0);
@@ -218,17 +236,84 @@ FTabiRequestID UTabiCombatComponent::TryBeginAttack()
 
 	StoreRequestID();
 	CurrentAttack = AttackDef;
+	CurrentTarget = Context.Target;
 
 	return GetCurrentRequestID();
 }
 
-const UTabiAttackDefinition* UTabiCombatComponent::SelectAttackDefinition()
+void UTabiCombatComponent::GatherUsableAttacks(const FTabiAttackContext& Context, TArray<const UTabiAttackDefinition*>& OutAttacks) const
+{
+	OutAttacks.Reset();
+
+	for (const TObjectPtr<UTabiAttackDefinition>& AttackDef : AttackDefinitions)
+	{
+		if (!AttackDef) continue;
+		if (!AttackDef->IsUsableAt(Context)) continue;
+		if (!IsAttackReady(AttackDef)) continue;
+
+		OutAttacks.Add(AttackDef);
+	}
+}
+
+bool UTabiCombatComponent::HasUsableAttack(const FTabiAttackContext& Context) const
+{
+	for (const TObjectPtr<UTabiAttackDefinition>& AttackDef : AttackDefinitions)
+	{
+		if (AttackDef && AttackDef->IsUsableAt(Context) && IsAttackReady(AttackDef)) return true;
+	}
+
+	return false;
+}
+
+bool UTabiCombatComponent::IsAttackReady(const UTabiAttackDefinition* AttackDefinition) const
+{
+	if (!AttackDefinition) return false;
+
+	const float* ReadyTime = AttackReadyTime.Find(AttackDefinition);
+	if (!ReadyTime) return true;
+
+	const UWorld* World = GetWorld();
+	if (!World) return true;
+
+	return World->GetTimeSeconds() >= *ReadyTime;
+}
+
+bool UTabiCombatComponent::GetAttackDistanceBand(const FTabiAttackContext& Context, float& OutMinRange, float& OutMaxRange) const
+{
+	FTabiAttackContext DistanceFreeContext = Context;
+
+	bool bFound = false;
+	float MinRange = TNumericLimits<float>::Max();
+	float MaxRange = 0.f;
+
+	for (const TObjectPtr<UTabiAttackDefinition>& AttackDef : AttackDefinitions)
+	{
+		if (!AttackDef) continue;
+		
+		DistanceFreeContext.DistanceToTarget = AttackDef->GetMinAttackRange();
+		if (!AttackDef->IsUsableAt(DistanceFreeContext)) continue;
+
+		MinRange = FMath::Min(MinRange, AttackDef->GetMinAttackRange());
+		MaxRange = FMath::Max(MaxRange, AttackDef->GetMaxAttackRange());
+		bFound = true;
+	}
+
+	if (!bFound) return false;
+
+	OutMinRange = MinRange;
+	OutMaxRange = MaxRange;
+	return true;
+}
+
+const UTabiAttackDefinition* UTabiCombatComponent::SelectAttackDefinition(const FTabiAttackContext& Context)
 {
 	// TODO: Make combo attack system. Don't select next attack definition randomly.
-	if (AttackDefinitions.IsEmpty()) return nullptr;
-	UTabiAttackDefinition* AttackDef = AttackDefinitions[FMath::RandRange(0, AttackDefinitions.Num() - 1)];
+	TArray<const UTabiAttackDefinition*> UsableAttacks;
+	GatherUsableAttacks(Context, UsableAttacks);
 
-	return AttackDef;
+	if (UsableAttacks.IsEmpty()) return nullptr;
+
+	return UsableAttacks[FMath::RandRange(0, UsableAttacks.Num() - 1)];
 }
 
 ETabiHitResult UTabiCombatComponent::Attack(ATabiCharacterBase* Target)
@@ -243,6 +328,14 @@ void UTabiCombatComponent::FinishAttack(bool IsCompleted)
 
 	const FTabiRequestID EndedRequestID = CurrentRequestID;
 	CurrentRequestID = FTabiRequestID();
+	
+	if (CurrentAttack && CurrentAttack->GetCooldown() > 0.f)
+	{
+		if (const UWorld* World = GetWorld())
+		{
+			AttackReadyTime.Add(CurrentAttack, World->GetTimeSeconds() + CurrentAttack->GetCooldown());
+		}
+	}
 
 	OnTabiAttackEnd.Broadcast(EndedRequestID, IsCompleted);
 }
@@ -270,8 +363,8 @@ void UTabiCombatComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 	if (UWorld* World = GetWorld())
 	{
-		World->GetTimerManager().ClearTimer(StunEffectBlinkTimerHandle);
-		World->GetTimerManager().ClearTimer(StunActivationTimerHandle);
+		World->GetTimerManager().ClearTimer(HitFlashIntervalTimerHandle);
+		World->GetTimerManager().ClearTimer(HitFlashDurationTimerHandle);
 	}
 
 	Super::EndPlay(EndPlayReason);

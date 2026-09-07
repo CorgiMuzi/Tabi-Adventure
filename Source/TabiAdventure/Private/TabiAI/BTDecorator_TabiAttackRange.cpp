@@ -9,15 +9,8 @@
 
 UBTDecorator_TabiAttackRange::UBTDecorator_TabiAttackRange()
 {
-	NodeName = TEXT("Is Close To Attack");
+	NodeName = TEXT("Has Usable Attack");
 	INIT_DECORATOR_NODE_NOTIFY_FLAGS();
-}
-
-void UBTDecorator_TabiAttackRange::PostLoad()
-{
-	Super::PostLoad();
-
-	bNotifyTick = (FlowAbortMode != EBTFlowAbortMode::None);
 }
 
 bool UBTDecorator_TabiAttackRange::CalculateRawConditionValue(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) const
@@ -32,30 +25,12 @@ bool UBTDecorator_TabiAttackRange::CalculateRawConditionValue(UBehaviorTreeCompo
 	if (!BB) return false;
 
 	const AActor* Target = Cast<AActor>(BB->GetValueAsObject(TabiEnemyBlackboardKey::Target));
-
-	float DistanceToTarget = TNumericLimits<float>::Max();
-	if (Target)
-	{
-		const float XDiff = Target->GetActorLocation().X - OwnerCharacter->GetActorLocation().X;
-		DistanceToTarget = FMath::Abs(XDiff);
-	}
-
-	const float AttackRadius = OwnerCharacter->GetAttackRadius();
-	/********************************************************
-	 *	CharSizeX : CharacterHalfSize().X
-	 *
-	 * <--                     Hit Box                    -->
-	 * <--          Hurt Box          -->
-	 * <-- CharSizeX --><-- CharSizeX --><-- AttackRadius -->
-	 *                  <--          Is In Range          -->
-	 *******************************************************/
-	const bool IsInRange = DistanceToTarget <= OwnerCharacter->GetCharacterHalfSize().X + AttackRadius;
-
-	return IsInRange && OwnerCharacter->IsOnSamePlatformAs(Target);
+	if (!Target) return false;
+	
+	return OwnerCharacter->HasUsableAttackAgainst(Target);
 }
 
 void UBTDecorator_TabiAttackRange::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds)
 {
 	ConditionalFlowAbort(OwnerComp, EBTDecoratorAbortRequest::ConditionResultChanged);
 }
-

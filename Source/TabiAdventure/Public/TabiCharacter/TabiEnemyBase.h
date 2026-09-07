@@ -23,8 +23,9 @@ public:
 	ATabiEnemyBase(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 	virtual void PostInitializeComponents() override;
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaSeconds) override;
 
-	virtual FTabiRequestID RequestAttack() override;
+	virtual FTabiRequestID RequestAttack(const AActor* Target = nullptr) override;
 
 protected:
 	UPROPERTY(Transient)
@@ -44,6 +45,14 @@ protected:
 	//~ End Vital
 
 	virtual void HandleDeathAnimEnd() override;
+
+	//~ Debug
+	// Draws every attack definition's range band in PIE 
+	UPROPERTY(EditAnywhere, Category="Tabi|Debug")
+	bool bDrawAttackRangeDebug = false;
+
+	void DrawAttackRangeDebug() const;
+	//~ End Debug
 
 public:
 	//~ Getter & Setter

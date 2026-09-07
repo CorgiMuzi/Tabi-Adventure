@@ -127,8 +127,8 @@ void ATabiTitleManager::ApplySunRotation() const
 void ATabiTitleManager::ApplySunColorAndIntensity() const
 {
 	if (!SunLight) return;
-
-	UDirectionalLightComponent* LightComponent = SunLight->GetComponent();
+	
+	UDirectionalLightComponent* LightComponent = Cast<UDirectionalLightComponent>(SunLight->GetLightComponent());
 	if (!LightComponent) return;
 
 	if (SunColorOverDay)

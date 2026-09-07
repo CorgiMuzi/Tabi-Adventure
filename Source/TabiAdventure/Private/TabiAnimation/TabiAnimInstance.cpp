@@ -72,6 +72,12 @@ bool UTabiAnimInstance::PlayDeadAnimation(const UPaperZDAnimSequence* DeadAnimSe
 	return PlayAnimationOverride(DeadAnimSequence, TEXT("DefaultSlot"), 1.f, 0, FZDOnAnimationOverrideEndSignature::CreateUObject(this, &ThisClass::HandleDeadAnimEnd));
 }
 
+bool UTabiAnimInstance::PlayHitReactAnimation(const UPaperZDAnimSequence* HitReactAnimSequence)
+{
+	if (!HitReactAnimSequence) UE_LOG(LogTemp, Warning, TEXT("Hit react animtion is not set."));
+	return PlayAnimationOverride(HitReactAnimSequence, TEXT("DefaultSlot"), 1.f, 0, FZDOnAnimationOverrideEndSignature::CreateUObject(this, &ThisClass::HandleHitReactAnimEnd));;
+}
+
 void UTabiAnimInstance::NotifyEnableHitCollision()
 {
 	OnEnableHitCollision.ExecuteIfBound();
@@ -92,4 +98,11 @@ void UTabiAnimInstance::HandleDeadAnimEnd(bool IsCompleted)
 	if (!IsCompleted) return;
 
 	OnDeathAnimEnd.ExecuteIfBound();
+}
+
+void UTabiAnimInstance::HandleHitReactAnimEnd(bool IsCompleted)
+{
+	if (!IsCompleted) return;
+	
+	OnHitReactAnimEnd.ExecuteIfBound();
 }

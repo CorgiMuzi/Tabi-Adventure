@@ -14,6 +14,7 @@ class UTabiAttackDefinition;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAttackAnimEndSignature, bool, IsCompleted);
 DECLARE_DYNAMIC_DELEGATE(FOnDeadAnimEndSignature);
+DECLARE_DYNAMIC_DELEGATE(FOnHitReactAnimEndSignature);
 DECLARE_DYNAMIC_DELEGATE(FEnableHitCollision);
 DECLARE_DYNAMIC_DELEGATE(FDisableHitCollision);
 
@@ -39,12 +40,14 @@ public:
 	bool PlayAttackAnimation(const UPaperZDAnimSequence* AttackAnimSequence);
 	void StopAttackAnimation();
 	bool PlayDeadAnimation(const UPaperZDAnimSequence* DeadAnimSequence);
+	bool PlayHitReactAnimation(const UPaperZDAnimSequence* HitReactAnimSequence);
 
 	void NotifyEnableHitCollision();
 	void NotifyDisableHitCollision();
 
 	FOnAttackAnimEndSignature OnAttackAnimEnd;
 	FOnDeadAnimEndSignature OnDeathAnimEnd;
+	FOnHitReactAnimEndSignature OnHitReactAnimEnd;
 	FEnableHitCollision OnEnableHitCollision;
 	FDisableHitCollision OnDisableHitCollision;
 
@@ -61,6 +64,7 @@ protected:
 private:
 	void HandleAttackAnimEnd(bool IsCompleted);
 	void HandleDeadAnimEnd(bool IsCompleted);
+	void HandleHitReactAnimEnd(bool IsCompleted);
 
 	UPROPERTY(Transient)
 	TMap<TObjectPtr<const UPaperZDAnimNotify_Base>, TObjectPtr<UAudioComponent>> ActiveLoopSounds;

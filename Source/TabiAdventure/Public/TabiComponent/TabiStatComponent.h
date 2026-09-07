@@ -57,7 +57,7 @@ public:
 
 	void SetStatCurrentValue(ETabiStatType StatType, float NewValue);
 	void SetStatBaseValue(ETabiStatType StatType, float NewValue);
-	float GetStatCurrentValue(ETabiStatType StatType);
+	float GetStatCurrentValue(ETabiStatType StatType) const;
 	float GetStatBaseValue(ETabiStatType StatType);
 	TMap<ETabiStatType, FTabiStat> GetAllStats() const;
 protected:

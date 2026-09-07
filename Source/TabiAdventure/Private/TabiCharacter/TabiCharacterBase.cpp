@@ -101,6 +101,8 @@ void ATabiCharacterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 		{
 			DepthSortSS->UnregisterActor(this);
 		}
+
+		CurrentWorld->GetTimerManager().ClearTimer(StunnedTimerHandle);
 	}
 
 	Super::EndPlay(EndPlayReason);
@@ -180,13 +182,38 @@ void ATabiCharacterBase::Landed(const FHitResult& Hit)
 	CurrentPlatform = Hit.GetActor();
 }
 
-FTabiRequestID ATabiCharacterBase::RequestAttack()
+FTabiRequestID ATabiCharacterBase::RequestAttack(const AActor* Target)
 {
 	if (!CanAttack()) return FTabiRequestID(0);
 
-	FTabiRequestID AttackRequestID = CombatComponent->TryBeginAttack();
+	FTabiRequestID AttackRequestID = CombatComponent->TryBeginAttack(BuildAttackContext(Target));
 	if (AttackRequestID.IsValid()) SetCharacterState(ETabiCharacterState::Attacking);
 	return AttackRequestID;
+}
+
+FTabiAttackContext ATabiCharacterBase::BuildAttackContext(const AActor* Target) const
+{
+	FTabiAttackContext Context;
+	if (!Target) return Context;
+
+	Context.bHasTarget = true;
+	Context.DistanceToTarget = FMath::Abs(Target->GetActorLocation().X - GetActorLocation().X);
+	Context.bSamePlatform = IsOnSamePlatformAs(Target);
+	Context.Target = Target;
+
+	return Context;
+}
+
+bool ATabiCharacterBase::HasUsableAttackAgainst(const AActor* Target) const
+{
+	if (!CombatComponent) return false;
+	return CombatComponent->HasUsableAttack(BuildAttackContext(Target));
+}
+
+bool ATabiCharacterBase::GetAttackDistanceBand(const AActor* Target, float& OutMinRange, float& OutMaxRange) const
+{
+	if (!CombatComponent) return false;
+	return CombatComponent->GetAttackDistanceBand(BuildAttackContext(Target), OutMinRange, OutMaxRange);
 }
 
 bool ATabiCharacterBase::CanAttack() const
@@ -209,9 +236,17 @@ ETabiHitResult ATabiCharacterBase::ReceiveDamage(const UTabiAttackDefinition* At
 
 	if (CurrentState == ETabiCharacterState::Dead) return ETabiHitResult::Ignored;
 
-	CombatComponent->OnCharacterDamaged(AttackDefinition, this, DamageCauser);
+	const bool bFeelGroggy = CombatComponent->ApplyPoiseDamage(AttackDefinition->GetPoiseDamage());
 
-	if (DamageCauser)
+	if (bFeelGroggy) CombatComponent->OnCharacterDamaged(AttackDefinition, this, DamageCauser);
+	else CombatComponent->StartHitFlash();
+	
+	if (bFeelGroggy && TabiAnimInstance && HitReactAnimSequence)
+	{
+		TabiAnimInstance->PlayHitReactAnimation(HitReactAnimSequence);
+	}
+
+	if (bFeelGroggy && DamageCauser)
 	{
 		FVector KnockbackDir = GetActorLocation() - DamageCauser->GetActorLocation();
 		KnockbackDir.Z = 0.f;
@@ -245,7 +280,6 @@ void ATabiCharacterBase::Dodge()
 	{
 		SetCharacterState(ETabiCharacterState::Dodging);
 		DodgeDirection = IsFacingRight() ? 1.f : -1.f;
-		// Character will be invunerable after 10% of DodgeDuration times.
 		GetCharacterMovement()->IsFalling() ? ExecuteAirDodge() : ExecuteDodge();
 	}, DodgeDuration * 0.1f, false);
 }
@@ -316,6 +350,8 @@ void ATabiCharacterBase::StopAttack()
 void ATabiCharacterBase::StartStunTimer(float BaseStunDuration, bool ShouldApplyStat /*true*/)
 {
 	if (!CombatComponent) return;
+	
+	if (GetWorldTimerManager().IsTimerActive(StunnedTimerHandle)) return;
 
 	const float FinalStunDuration = BaseStunDuration;
 	if (ShouldApplyStat)
@@ -326,9 +362,11 @@ void ATabiCharacterBase::StartStunTimer(float BaseStunDuration, bool ShouldApply
 	}
 
 	if (FinalStunDuration <= 0.f) return;
-
-	GetWorldTimerManager().SetTimer(StunnedTimerHandle, FTimerDelegate::CreateLambda(
-		                                [this]()
+	
+	CombatComponent->StartHitBlink(FinalStunDuration);
+	
+	GetWorldTimerManager().SetTimer(StunnedTimerHandle, FTimerDelegate::CreateWeakLambda(
+		                                this, [this]()
 		                                {
 			                                SetCharacterState(ETabiCharacterState::Idling);
 		                                }), FinalStunDuration, false);
@@ -475,7 +513,7 @@ void ATabiCharacterBase::OnCharacterStateChanged(ETabiCharacterState OldState, E
 
 			PerceptionStimuliSource->UnregisterFromPerceptionSystem();
 
-			if (TabiAnimInstance)
+			if (TabiAnimInstance && DeadAnimSequence)
 			{
 				const float FallbackTime = DeadAnimSequence ? DeadAnimSequence->GetTotalDuration() + DeathFallbackTime : DeathFallbackTime;
 				TabiAnimInstance->PlayDeadAnimation(DeadAnimSequence);
@@ -504,11 +542,6 @@ bool ATabiCharacterBase::CanMove() const
 		CurrentState != ETabiCharacterState::Dead &&
 		CurrentState != ETabiCharacterState::Dodging &&
 		CurrentState != ETabiCharacterState::Stunned;
-}
-
-bool ATabiCharacterBase::IsAlive() const
-{
-	return CurrentState != ETabiCharacterState::Dead;
 }
 
 void ATabiCharacterBase::SetSpriteColor(const FLinearColor& InColor)
@@ -568,7 +601,12 @@ bool ATabiCharacterBase::IsOnSamePlatformAs(const AActor* OtherActor) const
 
 	const AActor* MyPlatform = GetCurrentPlatform();
 	const AActor* OtherPlatform = OtherCharacter->GetCurrentPlatform();
-	return MyPlatform && MyPlatform == OtherPlatform;
+	
+	if (!MyPlatform || !OtherPlatform) return false;
+	const float MyElevation = MyPlatform->GetActorLocation().Z;
+	const float OtherElevation = OtherPlatform->GetActorLocation().Z;
+	const float ElevationDiff = fabs(OtherElevation - MyElevation);
+	return ElevationDiff <= ElevationThershold;
 }
 
 FVector ATabiCharacterBase::GetCharacterHalfSize() const

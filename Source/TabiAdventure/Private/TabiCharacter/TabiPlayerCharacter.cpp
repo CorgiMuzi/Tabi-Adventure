@@ -75,7 +75,7 @@ void ATabiPlayerCharacter::Move(const FInputActionValue& Value)
 
 	MoveAlongX(ScaleX);
 	/**
-	* FIXME: Z-fighting problem.
+	* TODO: 3D Z-fighting problem.
 	* const float ScaleY = FMath::Clamp(Value.Get<FVector2D>().Y, -1.f, 1.f);
 	* MoveAlongY(ScaleY);
 	**/

@@ -16,12 +16,18 @@ public:
 	// Sets default values for this component's properties
 	UTabiAICombatComponent();
 
+#if WITH_EDITOR
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif
+
+	virtual void EnableHitCollision() override;
 
 	inline float GetMinChaseHalfRadius() const { return MinChaseHalfRadius; }
 	inline float GetMaxChaseHalfRadius() const { return MaxChaseHalfRadius; }
 
 protected:
+	void SpawnProjectile();
+
 	UPROPERTY(EditAnywhere, meta=(ClampMin="0"))
 	float MinChaseHalfRadius = 0.f;
 

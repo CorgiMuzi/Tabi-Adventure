@@ -6,9 +6,6 @@
 #include "BehaviorTree/BTDecorator.h"
 #include "BTDecorator_TabiIsAlive.generated.h"
 
-/**
- *
- */
 UCLASS()
 class TABIADVENTURE_API UBTDecorator_TabiIsAlive : public UBTDecorator
 {
